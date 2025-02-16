@@ -13,7 +13,7 @@ include 'includes/header.php';
 <body>
     <div class="container">
         <h1>Welcome to the Employee Attendance and Management System</h1>
-        <p>This is a simple PHP website to manage employee attendance and status.</p>
+        <p>This is a simple PHP website to manage employee attendance and status!</p>
         <a href="views/dashboard.php">Go to Dashboard</a>
     </div>
     <script src="js/scripts.js"></script>
