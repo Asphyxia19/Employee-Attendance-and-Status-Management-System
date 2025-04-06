@@ -1,26 +1,33 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
+    background-color: #f8f9fa;
 }
-
-.container {
-    width: 80%;
-    margin: auto;
-    overflow: hidden;
-}
-
-header {
-    background: #333;
-    color: #fff;
-    padding-top: 30px;
-    min-height: 70px;
-    border-bottom: #77aaff 3px solid;
-}
-
-header h2 {
+.header {
+    background-color: #ffcc00; /* Main color */
+    padding: 20px 0;
     text-align: center;
-    text-transform: uppercase;
-    margin: 0;
+    color: #333;
+}
+.footer {
+    background-color: #343a40;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+.btn-custom {
+    background-color: #ffcc00; /* Main color */
+    color: #333;
+}
+.btn-custom:hover {
+    background-color: #e6b800; /* Darker shade for hover */
+}
+
+.logo {
+    max-width:  180px;
+    height: auto;    /* Maintain aspect ratio */
+    display: block;  /* Center the image if needed */
+    margin: 0 auto;  /* Center the image */
+    size-adjust: 30%;
 }
