@@ -17,9 +17,12 @@
     <h2 class="text-center">Welcome to ChooksToJarell!</h2>
     <div class="row justify-content-center">
         <div class="col-md-6 text-center">
-            <p>Please select your role to proceed:</p>
-            <a href="index.php" class="btn btn-primary btn-lg btn-block mb-3">Employees</a>
-            <a href="manager_login.php" class="btn btn-secondary btn-lg btn-block">Managers</a>
+            <p>What do you want to do today?</p>
+            <a href="index.php" class="btn btn-primary btn-lg btn-block mb-3">Attendance</a>
+            <a href="request.php" class="btn btn-primary btn-lg btn-block mb-3">Request</a>
+            <p>Log In here</p>
+            <a href="employee_login.php" class="btn btn-primary btn-lg btn-block mb-3">Employee</a>
+            <a href="manager_login.php" class="btn btn-primary btn-lg btn-block mb-3">Managers</a>
         </div>
     </div>
 </div>

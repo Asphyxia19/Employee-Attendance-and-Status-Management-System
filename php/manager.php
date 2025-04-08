@@ -36,51 +36,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 ?>
-
-
-
-<div class="container mt-5 text-center">
-    <h2 class="text-center">Attendance Dashboard</h2>
-    <div class="row justify-content-center">
         <div class="col-md-6">
-            <h4>Mark Attendance</h4>
-            <form id="attendanceForm" method="POST">
-                <div class="form-group">
-                    <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" name="employee_id" required>
-                </div>
-                <div class="form-group">
-                    <label for="attendanceDate">Attendance Date</label>
-                    <input type="date" class="form-control" id="attendanceDate" name="attendance_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkIn">Check-In Time</label>
-                    <input type="time" class="form-control" id="checkIn" name="check_in" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkOut">Check-Out Time</label>
-                    <input type="time" class="form-control" id="checkOut" name="check_out">
-                </div>
-                <div class="form-group">
-                    <label for="attendanceStatus">Status</label>
-                    <select class="form-control" id="attendanceStatus" name="status" required>
-                        <option value="">Select Status</option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="remarks">Remarks</label>
-                    <input type="text" class="form-control" id="remarks" name="remarks">
-                </div>
-                
-                <button type="submit" class="btn btn-custom">Submit Attendance</button>
-            </form>
-            <div class="text-center mt-3">
-                <a href="login.php" class="btn btn-warning btn-lg">Back</a>
-            </div>
+            <h4>Employee Attendance Records</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Attendance Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceRecords">
+                    <?php
+                    $sql = "SELECT employee_id, attendance_date, check_in, check_out, status, remarks 
+                            FROM employee_attendance 
+                            ORDER BY attendance_date DESC";
+
+                    $result = $conn->query($sql);
+
+                    if (!$result) {
+                        echo "<tr><td colspan='7' class='text-center'>Error executing query: " . $conn->error . "</td></tr>";
+                    } else {
+                        if ($result->num_rows > 0) {
+                            while ($row = $result->fetch_assoc()) {
+                                echo "<tr>
+                                    <td>" . $row['employee_id'] . "</td>
+                                    <td>" . $row['attendance_date'] . "</td>
+                                    <td>" . $row['check_in'] . "</td>
+                                    <td>" . $row['check_out'] . "</td>
+                                    <td>" . $row['status'] . "</td>
+                                    <td>" . $row['remarks'] . "</td>
+                                    <td>
+                                        <button class='btn btn-primary btn-sm edit-btn' data-id='" . "'>Edit</button>
+                                        <button class='btn btn-danger btn-sm delete-btn' data-id='" ."'>Delete</button>
+                                    </td>
+                                </tr>";
+                            }
+                        } else {
+                            echo "<tr><td colspan='7' class='text-center'>No attendance records found.</td></tr>";
+                        }
+                    }
+                    ?>
+                </tbody>
+            </table>
         </div>
-        
     </div>
 </div>
 
