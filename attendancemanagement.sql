@@ -54,6 +54,72 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `CrudEmployeeAttendance` (IN `p_acti
     END IF;
 END$$
 
+-- CRUD Procedure for Employee_Info
+CREATE PROCEDURE CrudEmployeeInfo (
+    IN p_action VARCHAR(10),
+    IN p_employee_id INT,
+    IN p_first_name VARCHAR(100),
+    IN p_last_name VARCHAR(100),
+    IN p_contact_number VARCHAR(20),
+    IN p_email VARCHAR(100),
+    IN p_address TEXT,
+    IN p_position VARCHAR(50),
+    IN p_hire_date DATE
+)
+BEGIN
+    -- CREATE (Insert New Employee)
+    IF p_action = 'CREATE' THEN
+        INSERT INTO Employee_Info (FirstName, LastName, ContactNumber, Email, Address, Position, HireDate)
+        VALUES (p_first_name, p_last_name, p_contact_number, p_email, p_address, p_position, p_hire_date);
+
+    -- READ (Get All Employees)
+    ELSEIF p_action = 'READ' THEN
+        SELECT * FROM Employee_Info;
+
+    -- UPDATE (Modify Employee Record)
+    ELSEIF p_action = 'UPDATE' THEN
+        UPDATE Employee_Info
+        SET FirstName = p_first_name, LastName = p_last_name, ContactNumber = p_contact_number,
+            Email = p_email, Address = p_address, Position = p_position, HireDate = p_hire_date
+        WHERE EmployeeID = p_employee_id;
+
+    -- DELETE (Remove Employee Record)
+    ELSEIF p_action = 'DELETE' THEN
+        DELETE FROM Employee_Info WHERE EmployeeID = p_employee_id;
+    END IF;
+END$$
+
+-- CRUD Procedure for Manager_Info
+CREATE PROCEDURE CrudManagerInfo (
+    IN p_action VARCHAR(10),
+    IN p_manager_id INT,
+    IN p_first_name VARCHAR(100),
+    IN p_last_name VARCHAR(100),
+    IN p_contact_number VARCHAR(20),
+    IN p_email VARCHAR(100)
+)
+BEGIN
+    -- CREATE (Insert New Manager)
+    IF p_action = 'CREATE' THEN
+        INSERT INTO Manager_Info (FirstName, LastName, ContactNumber, Email)
+        VALUES (p_first_name, p_last_name, p_contact_number, p_email);
+
+    -- READ (Get All Managers)
+    ELSEIF p_action = 'READ' THEN
+        SELECT * FROM Manager_Info;
+
+    -- UPDATE (Modify Manager Record)
+    ELSEIF p_action = 'UPDATE' THEN
+        UPDATE Manager_Info
+        SET FirstName = p_first_name, LastName = p_last_name, ContactNumber = p_contact_number, Email = p_email
+        WHERE ManagerID = p_manager_id;
+
+    -- DELETE (Remove Manager Record)
+    ELSEIF p_action = 'DELETE' THEN
+        DELETE FROM Manager_Info WHERE ManagerID = p_manager_id;
+    END IF;
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -131,6 +197,160 @@ INSERT INTO `employee_shift` (`id`, `employee_id`, `shift_date`, `start_time`, `
 (1, 1, '2024-04-01', '09:00:00', '17:00:00', 'Morning', 'Active'),
 (2, 2, '2024-04-01', '13:00:00', '21:00:00', 'Afternoon', 'Active'),
 (3, 3, '2024-04-02', '22:00:00', '06:00:00', 'Night', 'Active');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employee_Info`
+--
+
+CREATE TABLE Employee_Info (
+    EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    ContactNumber VARCHAR(20),
+    Email VARCHAR(100),
+    Address TEXT,
+    Position VARCHAR(50),
+    HireDate DATE
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Manager_Info`
+--
+
+CREATE TABLE Manager_Info (
+    ManagerID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    ContactNumber VARCHAR(20),
+    Email VARCHAR(100)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Shift_Duty_Info`
+--
+
+CREATE TABLE Shift_Duty_Info (
+    DutyID INT AUTO_INCREMENT PRIMARY KEY,
+    DutyName VARCHAR(100),
+    Description TEXT
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employee_Shift`
+--
+
+CREATE TABLE Employee_Shift (
+    ShiftID INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeID INT,
+    Date DATE,
+    Duty VARCHAR(100),
+    TimeIn DATETIME,
+    TimeOut DATETIME,
+    FOREIGN KEY (EmployeeID) REFERENCES Employee_Info(EmployeeID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Attendance_Log`
+--
+
+CREATE TABLE Attendance_Log (
+    LogID INT AUTO_INCREMENT PRIMARY KEY,
+    ShiftID INT,
+    Status VARCHAR(50),
+    LateMinutes INT,
+    Notes TEXT,
+    VerifiedBy INT,
+    FOREIGN KEY (ShiftID) REFERENCES Employee_Shift(ShiftID),
+    FOREIGN KEY (VerifiedBy) REFERENCES Manager_Info(ManagerID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Employee_Fixed_Schedule`
+--
+
+CREATE TABLE Employee_Fixed_Schedule (
+    ScheduleID INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeID INT,
+    DutyID INT,
+    DayOfWeek VARCHAR(20),
+    StartTime TIME,
+    EndTime TIME,
+    FOREIGN KEY (EmployeeID) REFERENCES Employee_Info(EmployeeID),
+    FOREIGN KEY (DutyID) REFERENCES Shift_Duty_Info(DutyID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Requests`
+--
+
+CREATE TABLE Requests (
+    RequestID INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeID INT,
+    RequestType VARCHAR(50),
+    Reason TEXT,
+    DateRequested DATE,
+    Status VARCHAR(50),
+    ManagerID INT,
+    FOREIGN KEY (EmployeeID) REFERENCES Employee_Info(EmployeeID),
+    FOREIGN KEY (ManagerID) REFERENCES Manager_Info(ManagerID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Overtime_Log`
+--
+
+CREATE TABLE Overtime_Log (
+    OTID INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeID INT,
+    Date DATE,
+    StartTime TIME,
+    EndTime TIME,
+    HoursRendered DECIMAL(5,2),
+    Reason TEXT,
+    ApprovedBy INT,
+    FOREIGN KEY (EmployeeID) REFERENCES Employee_Info(EmployeeID),
+    FOREIGN KEY (ApprovedBy) REFERENCES Manager_Info(ManagerID)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Payroll_Info`
+--
+
+CREATE TABLE Payroll_Info (
+    PayrollID INT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeID INT,
+    PeriodStart DATE,
+    PeriodEnd DATE,
+    TotalHoursWorked DECIMAL(6,2),
+    OTHours DECIMAL(6,2),
+    HourlyRate DECIMAL(6,2) DEFAULT 60,
+    OTRate DECIMAL(6,2),
+    GrossPay DECIMAL(8,2),
+    Deductions DECIMAL(8,2),
+    NetPay DECIMAL(8,2),
+    Status VARCHAR(50),
+    FOREIGN KEY (EmployeeID) REFERENCES Employee_Info(EmployeeID)
+);
+
+-- --------------------------------------------------------
 
 --
 -- Indexes for dumped tables
