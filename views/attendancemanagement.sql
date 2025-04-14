@@ -120,6 +120,42 @@ BEGIN
     END IF;
 END$$
 
+DELIMITER $$
+CREATE PROCEDURE CrudEmployeeAttendance(
+    IN action VARCHAR(10),
+    IN p_id INT,
+    IN p_employee_id INT,
+    IN p_shift_id INT,
+    IN p_attendance_date DATE,
+    IN p_check_in TIME,
+    IN p_check_out TIME,
+    IN p_status VARCHAR(20),
+    IN p_remarks TEXT
+)
+BEGIN
+    IF action = 'CREATE' THEN
+        INSERT INTO employee_attendance (employee_id, shift_id, attendance_date, check_in, check_out, status, remarks)
+        VALUES (p_employee_id, p_shift_id, p_attendance_date, p_check_in, p_check_out, p_status, p_remarks);
+    ELSEIF action = 'READ' THEN
+        SELECT * FROM employee_attendance WHERE id = p_id;
+    ELSEIF action = 'UPDATE' THEN
+        UPDATE employee_attendance
+        SET employee_id = p_employee_id, shift_id = p_shift_id, attendance_date = p_attendance_date,
+            check_in = p_check_in, check_out = p_check_out, status = p_status, remarks = p_remarks
+        WHERE id = p_id;
+    ELSEIF action = 'DELETE' THEN
+        DELETE FROM employee_attendance WHERE id = p_id;
+    END IF;
+END$$
+
+CREATE PROCEDURE SubmitEmployeeRequest(
+    IN p_employee_id INT,
+    IN p_request_message TEXT
+)
+BEGIN
+    INSERT INTO employee_requests (employee_id, request_message)
+    VALUES (p_employee_id, p_request_message);
+END$$
 DELIMITER ;
 
 -- --------------------------------------------------------

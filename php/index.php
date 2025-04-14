@@ -13,7 +13,7 @@
 <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
 <?php 
-include 'db_connection.php';
+require_once 'db_connection.php';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -25,14 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status = $_POST['status'];
     $remarks = $_POST['remarks'];
 
-    $sql = "INSERT INTO employee_attendance (employee_id, shift_id, attendance_date, check_in, check_out, status, remarks) 
-            VALUES ('$employee_id', '$shift_id', '$attendance_date', '$check_in', '$check_out', '$status', '$remarks')";
+    $stmt = $conn->prepare("CALL CrudEmployeeAttendance('CREATE', NULL, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iisssss", $employee_id, $shift_id, $attendance_date, $check_in, $check_out, $status, $remarks);
 
-    if ($conn->query($sql) === TRUE) {
+    if ($stmt->execute()) {
         echo "<p>New record created successfully!</p>";
     } else {
-        echo "<p>Error: " . $sql . "<br>" . $conn->error . "</p>";
+        echo "<p>Error: " . $stmt->error . "</p>";
     }
+
+    $stmt->close();
 }
 
 ?>
