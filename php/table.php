@@ -20,7 +20,7 @@
             <th>Remarks</th>
         </tr>
         <?php
-        include 'db_connection.php';
+        require_once 'db_connection.php';
 
         $sql = "SELECT * FROM employee_attendance";
         $result = $conn->query($sql);

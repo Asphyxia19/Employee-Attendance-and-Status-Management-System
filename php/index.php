@@ -13,7 +13,7 @@
 <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
 <?php 
-include 'db_connection.php';
+require_once 'db_connection.php';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
