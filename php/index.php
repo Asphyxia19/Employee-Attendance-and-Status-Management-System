@@ -14,24 +14,52 @@
 </header>
 <?php 
 require_once 'db_connection.php';
+require_once 'validate_attendance.php';
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $employee_id = $_POST['employee_id'];
-    $shift_id = $_POST['shift_id'];
     $attendance_date = $_POST['attendance_date'];
     $check_in = $_POST['check_in'];
     $check_out = $_POST['check_out'];
     $status = $_POST['status'];
     $remarks = $_POST['remarks'];
 
-    $stmt = $conn->prepare("CALL CrudEmployeeAttendance('CREATE', NULL, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iisssss", $employee_id, $shift_id, $attendance_date, $check_in, $check_out, $status, $remarks);
+    // Validate the input
+    $validation_result = validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status);
+    if ($validation_result !== true) {
+        echo "<script>
+            Swal.fire({
+                title: 'Error!',
+                text: '$validation_result',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
+        exit;
+    }
+
+    // Proceed to record attendance
+    $stmt = $conn->prepare("CALL CrudEmployeeAttendance('CREATE', NULL, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("isssss", $employee_id, $attendance_date, $check_in, $check_out, $status, $remarks);
 
     if ($stmt->execute()) {
-        echo "<p>New record created successfully!</p>";
+        echo "<script>
+            Swal.fire({
+                title: 'Success!',
+                text: 'Attendance recorded successfully!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        </script>";
     } else {
-        echo "<p>Error: " . $stmt->error . "</p>";
+        echo "<script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to record attendance. Please try again.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
     }
 
     $stmt->close();
