@@ -5,8 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Debugging: Check if the session variable is set
 if (!isset($_SESSION['ManagerID'])) {
-    echo "Session ManagerID is not set!";
-    header("Location: manager.php");
+    echo "Session ManagerID is not set! Redirecting to login.";
+    header("Location: manager_login.php");
     exit();
 }
 
