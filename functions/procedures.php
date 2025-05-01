@@ -62,6 +62,37 @@ class Procedures {
         return false; // Return false if login fails
     }
 
+    public function loginManagerByFirstName($firstName, $password) {
+        $query = "SELECT ManagerID, FirstName, LastName, Password FROM manager_info WHERE FirstName = ?";
+        $stmt = $this->conn->prepare($query);
+
+        if (!$stmt) {
+            die("Failed to prepare statement: " . $this->conn->error);
+        }
+
+        $stmt->bind_param("s", $firstName);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result && $result->num_rows === 1) {
+            $manager = $result->fetch_assoc();
+
+            // Debugging: Output fetched manager details
+            echo "Fetched Manager: " . print_r($manager, true) . "<br>";
+
+            // Verify the password
+            if (password_verify($password, $manager['Password'])) {
+                return $manager; // Return manager details if login is successful
+            } else {
+                echo "Password verification failed!<br>";
+            }
+        } else {
+            echo "No matching FirstName found.<br>";
+        }
+
+        return false; // Return false if login fails
+    }
+
     // Call a stored procedure
     private function callProcedure($procedureName, $params = []) {
         $placeholders = implode(',', array_fill(0, count($params), '?'));

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,9 +8,41 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
+<?php
+session_start();
+require_once '../functions/db_connection.php';
+require_once '../functions/procedures.php';
+
+// Check if the manager is logged in
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+    header("Location: manager_login.php"); // Redirect to login page if not logged in
+    exit;
+}
+
+// Retrieve manager details from the session
+$managerID = isset($_SESSION['manager_id']) ? $_SESSION['manager_id'] : null;
+$managerName = isset($_SESSION['manager_name']) ? $_SESSION['manager_name'] : null;
+
+// If session variables are missing, redirect to login
+if (!$managerID || !$managerName) {
+    header("Location: manager_login.php");
+    exit;
+}
+
+// Fetch manager details, employees, and attendance records
+$database = new Database();
+$db = $database->getConnection();
+$procedures = new Procedures($db);
+
+$managerDetails = $procedures->fetchManagerDetails($managerID);
+$employees = $procedures->fetchAllEmployees();
+$attendanceRecords = $procedures->fetchAttendanceRecords();
+?>
+
+
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <h2>Welcome, <?php echo $managerDetails['FirstName'] . ' ' . $managerDetails['LastName']; ?></h2>
+    <h2>Welcome, <?php echo htmlspecialchars($managerName); ?></h2>
 </header>
 
 <div class="container mt-5">
@@ -33,12 +64,12 @@
         <tbody>
             <?php foreach ($employees as $employee): ?>
                 <tr>
-                    <td><?php echo $employee['EmployeeID']; ?></td>
-                    <td><?php echo $employee['FirstName']; ?></td>
-                    <td><?php echo $employee['LastName']; ?></td>
-                    <td><?php echo $employee['Position']; ?></td>
-                    <td><?php echo $employee['ContactNumber']; ?></td>
-                    <td><?php echo $employee['Email']; ?></td>
+                    <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
+                    <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
+                    <td><?php echo htmlspecialchars($employee['LastName']); ?></td>
+                    <td><?php echo htmlspecialchars($employee['Position']); ?></td>
+                    <td><?php echo htmlspecialchars($employee['ContactNumber']); ?></td>
+                    <td><?php echo htmlspecialchars($employee['Email']); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -60,12 +91,12 @@
         <tbody>
             <?php foreach ($attendanceRecords as $record): ?>
                 <tr>
-                    <td><?php echo $record['RecordID']; ?></td>
-                    <td><?php echo $record['EmployeeID']; ?></td>
-                    <td><?php echo $record['Date']; ?></td>
-                    <td><?php echo $record['CheckIn']; ?></td>
-                    <td><?php echo $record['CheckOut']; ?></td>
-                    <td><?php echo $record['Status']; ?></td>
+                    <td><?php echo htmlspecialchars($record['RecordID']); ?></td>
+                    <td><?php echo htmlspecialchars($record['EmployeeID']); ?></td>
+                    <td><?php echo htmlspecialchars($record['Date']); ?></td>
+                    <td><?php echo htmlspecialchars($record['CheckIn']); ?></td>
+                    <td><?php echo htmlspecialchars($record['CheckOut']); ?></td>
+                    <td><?php echo htmlspecialchars($record['Status']); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

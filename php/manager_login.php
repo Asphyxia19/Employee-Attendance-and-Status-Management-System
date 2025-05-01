@@ -1,3 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
 <?php
 session_start();
 require_once '../functions/db_connection.php';
@@ -6,24 +17,31 @@ require_once '../functions/session.php';
 
 $session = new Session(); // Instantiate the Session class
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
 
     $procedures = new Procedures($db);
-    $managerID = htmlspecialchars(trim($_POST['manager_id']));
+    $firstName = htmlspecialchars(trim($_POST['first_name']));
     $password = htmlspecialchars(trim($_POST['password']));
 
+    // Debugging: Output received POST data
+    echo "FirstName: $firstName<br>";
+    echo "Password: $password<br>";
+
     // Attempt to log in
-    $managerDetails = $procedures->loginManager($managerID, $password);
+    $managerDetails = $procedures->loginManagerByFirstName($firstName, $password);
 
+    // Debugging: Check if loginManagerByFirstName returned details
     if ($managerDetails) {
-        // Set session variables
-        $session->set('manager_id', $managerDetails['ManagerID']);
-        $session->set('manager_name', $managerDetails['FirstName'] . ' ' . $managerDetails['LastName']);
-        $session->set('logged_in', true);
+        echo "Login successful! Manager details: " . print_r($managerDetails, true) . "<br>";
 
+        // Set session variables
+        $_SESSION['manager_id'] = $managerDetails['ManagerID'];
+        $_SESSION['manager_name'] = $managerDetails['FirstName'] . ' ' . $managerDetails['LastName'];
+        $_SESSION['logged_in'] = true;
+
+        // Redirect with SweetAlert
         echo "
         <script>
             Swal.fire({
@@ -35,31 +53,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         </script>";
     } else {
+        // Debugging: Output failure message
+        echo "Login failed! Invalid FirstName or password.<br>";
+
+        // Redirect with SweetAlert
         echo "
         <script>
             Swal.fire({
                 title: 'Oops!',
-                text: 'Invalid ManagerID or password. Please try again.',
+                text: 'Invalid FirstName or password. Please try again.',
                 icon: 'error'
             }).then(function() {
-                window.location.href = 'index.php';  // Redirect back to login page
+                window.location.href = 'manager_login.php';  // Redirect back to login page
             });
         </script>";
     }
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Login</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
+
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
@@ -70,8 +82,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="col-md-6">
             <form method="POST" action="manager_login.php">
                 <div class="form-group">
-                    <label for="manager_id">Manager ID</label>
-                    <input type="text" class="form-control" id="manager_id" name="manager_id" required>
+                    <label for="first_name">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
@@ -89,8 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <footer class="footer mt-5">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
 </body>
 </html>
