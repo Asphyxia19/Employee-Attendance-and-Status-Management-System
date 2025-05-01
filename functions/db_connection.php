@@ -1,14 +1,10 @@
 <?php
-// filepath: c:\xampp\htdocs\Employee-Attendance-and-Status-Management-System\php\db_connection.php
+require_once 'database.php';
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "attendancemanagement";
+$database = new Database();
+$conn = $database->getConnection();
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+if (!$conn) {
+    die("Database connection failed: " . mysqli_connect_error());
 }
 ?>

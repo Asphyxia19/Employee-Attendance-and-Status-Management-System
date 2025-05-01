@@ -1,29 +1,3 @@
-<?php
-if (!isset($_SESSION['ManagerID'])) {
-    echo "Session ManagerID is not set! Redirecting to login.";
-    header("Location: manager_login.php");
-    exit();
-} else {
-    echo "Session ManagerID: " . $_SESSION['ManagerID']; // Debugging
-}
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Debugging: Check if the session variable is set
-
-
-require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
-
-// Instantiate the Procedures class
-$procedures = new Procedures($conn);
-
-// Fetch data for the dashboard
-$employees = $procedures->fetchAllEmployees();
-$attendanceRecords = $procedures->fetchAttendanceRecords();
-$managerDetails = $procedures->fetchManagerDetails($_SESSION['ManagerID']);
-?>
 
 <!DOCTYPE html>
 <html lang="en">

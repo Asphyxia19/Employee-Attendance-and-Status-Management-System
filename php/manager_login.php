@@ -1,38 +1,51 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-ob_start();
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
+session_start();
 require_once '../functions/db_connection.php';
+require_once '../functions/procedures.php';
+require_once '../functions/session.php';
+
+$session = new Session(); // Instantiate the Session class
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $userid = $_POST['username'];
-    $password = $_POST['password'];
+    $database = new Database();
+    $db = $database->getConnection();
 
-    $stmt = $conn->prepare("SELECT Password FROM manager_info WHERE ManagerID = ?");
-    $stmt->bind_param("s", $userid);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $procedures = new Procedures($db);
+    $managerID = htmlspecialchars(trim($_POST['manager_id']));
+    $password = htmlspecialchars(trim($_POST['password']));
 
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-        if (password_verify($password, $user['Password'])) {
-            $_SESSION['ManagerID'] = $userid;
-            header("Location: manager.php");
-            exit();
-        } else {
-            $errorMsg = "Invalid password. Please try again.";
-        }
+    // Attempt to log in
+    $managerDetails = $procedures->loginManager($managerID, $password);
+
+    if ($managerDetails) {
+        // Set session variables
+        $session->set('manager_id', $managerDetails['ManagerID']);
+        $session->set('manager_name', $managerDetails['FirstName'] . ' ' . $managerDetails['LastName']);
+        $session->set('logged_in', true);
+
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Welcome!',
+                text: 'Login Successful',
+                icon: 'success'
+            }).then(function() {
+                window.location.href = 'manager.php';  // Redirect to dashboard
+            });
+        </script>";
     } else {
-        $errorMsg = "Invalid username or role.";
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Oops!',
+                text: 'Invalid ManagerID or password. Please try again.',
+                icon: 'error'
+            }).then(function() {
+                window.location.href = 'index.php';  // Redirect back to login page
+            });
+        </script>";
     }
-
-    $stmt->close();
 }
 ?>
 
@@ -57,8 +70,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="col-md-6">
             <form method="POST" action="manager_login.php">
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
+                    <label for="manager_id">Manager ID</label>
+                    <input type="text" class="form-control" id="manager_id" name="manager_id" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
@@ -79,19 +92,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
-
-<?php if (isset($errorMsg)): ?>
-<script>
-    Swal.fire({
-        title: 'Login Failed',
-        text: "<?php echo $errorMsg; ?>",
-        icon: 'error',
-        confirmButtonText: 'OK'
-    });
-</script>
-<?php endif; ?>
-
 </body>
 </html>
-
-<?php ob_end_flush(); ?>
