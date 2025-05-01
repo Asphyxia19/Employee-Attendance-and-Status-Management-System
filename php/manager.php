@@ -1,154 +1,135 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Debugging: Check if the session variable is set
+if (!isset($_SESSION['ManagerID'])) {
+    echo "Session ManagerID is not set!";
+    header("Location: manager.php");
+    exit();
+}
+
+require_once '../functions/db_connection.php';
+require_once '../functions/procedures.php';
+
+// Instantiate the Procedures class
+$procedures = new Procedures($conn);
+
+// Fetch data for the dashboard
+$employees = $procedures->fetchAllEmployees();
+$attendanceRecords = $procedures->fetchAttendanceRecords();
+$managerDetails = $procedures->fetchManagerDetails($_SESSION['ManagerID']);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Page</title>
+    <title>Manager Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
 <header class="header">
-<img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <h2>Welcome, <?php echo $managerDetails['FirstName'] . ' ' . $managerDetails['LastName']; ?></h2>
 </header>
-<?php 
-require_once 'db_connection.php';
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $employee_id = $_POST['employee_id'];
-    $shift_id = $_POST['shift_id'];
-    $attendance_date = $_POST['attendance_date'];
-    $check_in = $_POST['check_in'];
-    $check_out = $_POST['check_out'];
-    $status = $_POST['status'];
-    $remarks = $_POST['remarks'];
+<div class="container mt-5">
+    <h2 class="text-center">Manager Dashboard</h2>
 
-    $sql = "INSERT INTO employee_attendance (employee_id, shift_id, attendance_date, check_in, check_out, status, remarks) 
-            VALUES ('$employee_id', '$shift_id', '$attendance_date', '$check_in', '$check_out', '$status', '$remarks')";
+    <!-- Employees Section -->
+    <h3>Employees</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Position</th>
+                <th>Contact</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($employees as $employee): ?>
+                <tr>
+                    <td><?php echo $employee['EmployeeID']; ?></td>
+                    <td><?php echo $employee['FirstName']; ?></td>
+                    <td><?php echo $employee['LastName']; ?></td>
+                    <td><?php echo $employee['Position']; ?></td>
+                    <td><?php echo $employee['ContactNumber']; ?></td>
+                    <td><?php echo $employee['Email']; ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 
-    if ($conn->query($sql) === TRUE) {
-        echo "<p>New record created successfully!</p>";
-    } else {
-        echo "<p>Error: " . $sql . "<br>" . $conn->error . "</p>";
-    }
-}
+    <!-- Attendance Records Section -->
+    <h3>Attendance Records</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Record ID</th>
+                <th>Employee ID</th>
+                <th>Date</th>
+                <th>Check-In</th>
+                <th>Check-Out</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($attendanceRecords as $record): ?>
+                <tr>
+                    <td><?php echo $record['RecordID']; ?></td>
+                    <td><?php echo $record['EmployeeID']; ?></td>
+                    <td><?php echo $record['Date']; ?></td>
+                    <td><?php echo $record['CheckIn']; ?></td>
+                    <td><?php echo $record['CheckOut']; ?></td>
+                    <td><?php echo $record['Status']; ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 
-?>
-        <div class="col-md-6">
-            <h4>Employee Attendance Records</h4>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Attendance Date</th>
-                        <th>Check-In</th>
-                        <th>Check-Out</th>
-                        <th>Status</th>
-                        <th>Remarks</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="attendanceRecords">
-                    <?php
-                    $sql = "SELECT employee_id, attendance_date, check_in, check_out, status, remarks 
-                            FROM employee_attendance 
-                            ORDER BY attendance_date DESC";
-
-                    $result = $conn->query($sql);
-
-                    if (!$result) {
-                        echo "<tr><td colspan='7' class='text-center'>Error executing query: " . $conn->error . "</td></tr>";
-                    } else {
-                        if ($result->num_rows > 0) {
-                            while ($row = $result->fetch_assoc()) {
-                                echo "<tr>
-                                    <td>" . $row['employee_id'] . "</td>
-                                    <td>" . $row['attendance_date'] . "</td>
-                                    <td>" . $row['check_in'] . "</td>
-                                    <td>" . $row['check_out'] . "</td>
-                                    <td>" . $row['status'] . "</td>
-                                    <td>" . $row['remarks'] . "</td>
-                                    <td>
-                                        <button class='btn btn-primary btn-sm edit-btn' data-id='" . "'>Edit</button>
-                                        <button class='btn btn-danger btn-sm delete-btn' data-id='" ."'>Delete</button>
-                                    </td>
-                                </tr>";
-                            }
-                        } else {
-                            echo "<tr><td colspan='7' class='text-center'>No attendance records found.</td></tr>";
-                        }
-                    }
-                    ?>
-                </tbody>
-            </table>
+    <!-- Add Employee Form -->
+    <h3>Add Employee</h3>
+    <form method="POST" action="add_employee.php">
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" class="form-control" id="firstName" name="firstName" required>
         </div>
-    </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" class="form-control" id="lastName" name="lastName" required>
+        </div>
+        <div class="form-group">
+            <label for="contactNumber">Contact Number</label>
+            <input type="text" class="form-control" id="contactNumber" name="contactNumber" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="position">Position</label>
+            <input type="text" class="form-control" id="position" name="position" required>
+        </div>
+        <div class="form-group">
+            <label for="hireDate">Hire Date</label>
+            <input type="date" class="form-control" id="hireDate" name="hireDate" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Employee</button>
+    </form>
 </div>
 
-<footer class="footer">
+<footer class="footer mt-5">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
-<script>
-    $(document).ready(function() {
-        $('#attendanceForm').on('submit', function(e) {
-            e.preventDefault();
-            const employeeId = $('#employeeId').val();
-            const status = $('#attendanceStatus').val();
-            const date = new Date().toLocaleDateString();
-
-            // Add record to the table
-            $('#attendanceRecords').append(`
-                <tr>
-                    <td>${employeeId}</td>
-                    <td>${date}</td>
-                    <td>${status}</td>
-                </tr>
-            `);
-
-            // Show success alert
-            Swal.fire({
-                title: 'Success!',
-                text: 'Attendance recorded successfully!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-
-            // Reset form
-            $('#attendanceForm')[0].reset();
-        });
-
-        // Handle delete button click
-        $(document).on('click', '.delete-btn', function() {
-            const id = $(this).data('id');
-            if (confirm('Are you sure you want to delete this record?')) {
-                $.ajax({
-                    url: 'delete_attendance.php',
-                    type: 'POST',
-                    data: { id: id },
-                    success: function(response) {
-                        if (response === 'success') {
-                            alert('Record deleted successfully!');
-                            location.reload();
-                        } else {
-                            alert('Failed to delete record.');
-                        }
-                    }
-                });
-            }
-        });
-
-        // Handle edit button click
-        $(document).on('click', '.edit-btn', function() {
-            const id = $(this).data('id');
-            // Redirect to edit page with the record ID
-            window.location.href = `edit_attendance.php?id=${id}`;
-        });
-    });
-</script>
 </body>
 </html>

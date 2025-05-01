@@ -1,3 +1,49 @@
+<?php
+session_start();
+require_once '../functions/db_connection.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $userid = $_POST['username'];
+    $password = $_POST['password'];
+
+    // Prepared statement to prevent SQL injection
+    $stmt = $conn->prepare("SELECT Password FROM manager_info WHERE ManagerID = ?");
+    $stmt->bind_param("s", $userid);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows === 1) {
+        $user = $result->fetch_assoc();
+
+        // Verify the password
+        if (password_verify($password, $user['Password'])) {
+            $_SESSION['ManagerID'] = $userid; // Set the session variable
+            header("Location: manager.php");
+            exit();
+        } else {
+            echo "<script>
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Invalid password. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            </script>";
+        }
+    } else {
+        echo "<script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Invalid username or role.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
+    }
+
+    $stmt->close();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +63,7 @@
     <h2 class="text-center">Manager Login</h2>
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <form method="POST" action="manager_dashboard.php">
+            <form method="POST" action="manager_login.php">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
