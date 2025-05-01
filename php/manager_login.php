@@ -2,13 +2,18 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+ob_start();
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once '../functions/db_connection.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userid = $_POST['username'];
     $password = $_POST['password'];
 
-    // Prepared statement to prevent SQL injection
     $stmt = $conn->prepare("SELECT Password FROM manager_info WHERE ManagerID = ?");
     $stmt->bind_param("s", $userid);
     $stmt->execute();
@@ -16,36 +21,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
-
-        // Verify the password
         if (password_verify($password, $user['Password'])) {
-            $_SESSION['ManagerID'] = $userid; // Set the session variable
+            $_SESSION['ManagerID'] = $userid;
             header("Location: manager.php");
             exit();
         } else {
-            echo "<script>
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Invalid password. Please try again.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            </script>";
+            $errorMsg = "Invalid password. Please try again.";
         }
     } else {
-        echo "<script>
-            Swal.fire({
-                title: 'Error!',
-                text: 'Invalid username or role.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        </script>";
+        $errorMsg = "Invalid username or role.";
     }
 
     $stmt->close();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,15 +58,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST" action="manager_login.php">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required>
+                    <input type="text" class="form-control" id="username" name="username" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                    <input type="password" class="form-control" id="password" name="password" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
-            <!-- Centered Back Button -->
             <div class="text-center mt-3">
                 <a href="login.php" class="btn btn-warning btn-lg">Back</a>
             </div>
@@ -90,5 +79,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
+
+<?php if (isset($errorMsg)): ?>
+<script>
+    Swal.fire({
+        title: 'Login Failed',
+        text: "<?php echo $errorMsg; ?>",
+        icon: 'error',
+        confirmButtonText: 'OK'
+    });
+</script>
+<?php endif; ?>
+
 </body>
 </html>
+
+<?php ob_end_flush(); ?>

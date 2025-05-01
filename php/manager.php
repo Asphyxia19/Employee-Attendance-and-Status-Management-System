@@ -1,14 +1,17 @@
 <?php
+if (!isset($_SESSION['ManagerID'])) {
+    echo "Session ManagerID is not set! Redirecting to login.";
+    header("Location: manager_login.php");
+    exit();
+} else {
+    echo "Session ManagerID: " . $_SESSION['ManagerID']; // Debugging
+}
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // Debugging: Check if the session variable is set
-if (!isset($_SESSION['ManagerID'])) {
-    echo "Session ManagerID is not set! Redirecting to login.";
-    header("Location: manager_login.php");
-    exit();
-}
+
 
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
