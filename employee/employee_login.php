@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
@@ -30,7 +30,7 @@
             </form>
             <!-- Centered Back Button -->
             <div class="text-center mt-3">
-                <a href="login.php" class="btn btn-warning btn-lg">Back</a>
+                <a href="../php/index.php" class="btn btn-warning btn-lg">Back</a>
             </div>
         </div>
     </div>

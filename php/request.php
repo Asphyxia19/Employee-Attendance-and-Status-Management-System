@@ -9,6 +9,25 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
@@ -30,7 +49,7 @@
             </form>
             <!-- Centered Back Button -->
             <div class="text-center mt-3">
-                <a href="login.php" class="btn btn-warning btn-lg">Back</a>
+                <a href="index.php" class="btn btn-warning btn-lg">Back</a>
             </div>
         </div>
     </div>

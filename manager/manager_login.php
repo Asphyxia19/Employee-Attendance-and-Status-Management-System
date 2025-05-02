@@ -10,38 +10,22 @@
 </head>
 <body>
 <?php
-session_start();
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
-require_once '../functions/session.php';
-
-$session = new Session(); // Instantiate the Session class
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
-
     $procedures = new Procedures($db);
+
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $password = htmlspecialchars(trim($_POST['password']));
-
-    // Debugging: Output received POST data
-    echo "FirstName: $firstName<br>";
-    echo "Password: $password<br>";
 
     // Attempt to log in
     $managerDetails = $procedures->loginManagerByFirstName($firstName, $password);
 
-    // Debugging: Check if loginManagerByFirstName returned details
     if ($managerDetails) {
-        echo "Login successful! Manager details: " . print_r($managerDetails, true) . "<br>";
-
-        // Set session variables
-        $_SESSION['manager_id'] = $managerDetails['ManagerID'];
-        $_SESSION['manager_name'] = $managerDetails['FirstName'] . ' ' . $managerDetails['LastName'];
-        $_SESSION['logged_in'] = true;
-
-        // Redirect with SweetAlert
+        // Redirect with SweetAlert on successful login
         echo "
         <script>
             Swal.fire({
@@ -53,15 +37,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         </script>";
     } else {
-        // Debugging: Output failure message
-        echo "Login failed! Invalid FirstName or password.<br>";
-
-        // Redirect with SweetAlert
+        // Redirect with SweetAlert on failed login
         echo "
         <script>
             Swal.fire({
                 title: 'Oops!',
-                text: 'Invalid FirstName or password. Please try again.',
+                text: 'Invalid First Name or password. Please try again.',
                 icon: 'error'
             }).then(function() {
                 window.location.href = 'manager_login.php';  // Redirect back to login page
@@ -70,7 +51,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
 
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
@@ -92,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
             <div class="text-center mt-3">
-                <a href="login.php" class="btn btn-warning btn-lg">Back</a>
+                <a href="../php/index.php" class="btn btn-warning btn-lg">Back</a>
             </div>
         </div>
     </div>
