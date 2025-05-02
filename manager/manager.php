@@ -13,6 +13,14 @@ session_start();
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
 
+// Add this logout logic at the top of the file
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    session_start();
+    session_destroy();
+    header("Location: manager_login.php"); // Redirect to login page
+    exit;
+}
+
 // Check if the manager is logged in
 //if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
  //   header("Location: manager_login.php"); // Redirect to login page if not logged in
@@ -52,6 +60,7 @@ try {
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
     <!--<h2>Welcome, <?php echo htmlspecialchars($managerDetails['FirstName'] . ' ' . $managerDetails['LastName']); ?></h2> -->
+    <a href="?action=logout" class="btn btn-danger float-right">Logout</a> <!-- Add Logout Button -->
 </header>
 
 <div class="container mt-5">
