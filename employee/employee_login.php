@@ -13,11 +13,75 @@
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
 
+<?php
+require_once '../functions/db_connection.php';
+require_once '../functions/procedures.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $database = new Database();
+    $db = $database->getConnection();
+    $procedures = new Procedures($db);
+
+    $employeeID = htmlspecialchars(trim($_POST['employee_id']));
+    $password = htmlspecialchars(trim($_POST['password']));
+
+    // Check if the employee exists and the password matches
+    $query = "SELECT EmployeeID, Password FROM employee_info WHERE EmployeeID = ?";
+    $stmt = $db->prepare($query);
+    $stmt->bind_param("i", $employeeID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows === 1) {
+        $employee = $result->fetch_assoc();
+
+        // Compare the plain text password directly (assuming passwords are stored as plain text)
+        if ($password === $employee['Password']) {
+            // Redirect to employee.php
+            echo "
+            <script>
+                Swal.fire({
+                    title: 'Welcome!',
+                    text: 'Login Successful',
+                    icon: 'success'
+                }).then(function() {
+                    window.location.href = 'employee.php';  // Redirect to employee dashboard
+                });
+            </script>";
+        } else {
+            // Invalid password
+            echo "
+            <script>
+                Swal.fire({
+                    title: 'Oops!',
+                    text: 'Invalid Employee ID or password. Please try again.',
+                    icon: 'error'
+                }).then(function() {
+                    window.location.href = 'employee_login.php';  // Redirect back to login page
+                });
+            </script>";
+        }
+    } else {
+        // Employee not found
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Oops!',
+                text: 'Invalid Employee ID or password. Please try again.',
+                icon: 'error'
+            }).then(function() {
+                window.location.href = 'employee_login.php';  // Redirect back to login page
+            });
+        </script>";
+    }
+}
+?>
+
 <div class="container mt-5">
     <h2 class="text-center">Employee Login</h2>
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <form method="POST" action="employee_dashboard.php">
+            <form method="POST" action="employee_login.php">
                 <div class="form-group">
                     <label for="employeeId">Employee ID</label>
                     <input type="text" class="form-control" id="employeeId" name="employee_id" placeholder="Enter your Employee ID" required>
@@ -28,7 +92,6 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Login</button>
             </form>
-            <!-- Centered Back Button -->
             <div class="text-center mt-3">
                 <a href="../php/index.php" class="btn btn-warning btn-lg">Back</a>
             </div>
