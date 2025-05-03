@@ -18,11 +18,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $db = $database->getConnection();
     $procedures = new Procedures($db);
 
-    $firstName = htmlspecialchars(trim($_POST['first_name']));
+    $managerID = intval($_POST['manager_id']); // Use ManagerID instead of FirstName
     $password = htmlspecialchars(trim($_POST['password']));
 
     // Attempt to log in
-    $managerDetails = $procedures->loginManagerByFirstName($firstName, $password);
+    $managerDetails = $procedures->loginManagerByID($managerID, $password);
 
     if ($managerDetails) {
         // Redirect with SweetAlert on successful login
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <script>
             Swal.fire({
                 title: 'Oops!',
-                text: 'Invalid First Name or password. Please try again.',
+                text: 'Invalid Manager ID or password. Please try again.',
                 icon: 'error'
             }).then(function() {
                 window.location.href = 'manager_login.php';  // Redirect back to login page
