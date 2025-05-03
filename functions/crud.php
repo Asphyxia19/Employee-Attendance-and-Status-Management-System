@@ -21,15 +21,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || $_SERVER["REQUEST_METHOD"] == "GET")
             $position = htmlspecialchars(trim($_POST['position']));
             $hireDate = htmlspecialchars(trim($_POST['hire_date']));
 
-            try {
-                $procedures->createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
-                echo "Employee created successfully!";
-            } catch (Exception $e) {
-                echo "Error: " . $e->getMessage();
-            }
-            break;
+          //  try {
+          //      $procedures->createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+          //      echo "Employee created successfully!";
+          //  } catch (Exception $e) {
+          //      echo "Error: " . $e->getMessage();
+           // }
+           // break;
 
-        case 'read':
+      //  case 'read':
             // Read all employees
             try {
                 $employees = $procedures->getAllEmployees();

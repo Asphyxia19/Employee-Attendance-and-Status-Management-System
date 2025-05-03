@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Dashboard</title>
+    <title>Manager Attttendance</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-<<<<<<< HEAD
 <?php
 session_start();
 require_once '../functions/db_connection.php';
@@ -58,37 +57,51 @@ try {
     die("Error: " . $e->getMessage());
 }
 ?>
-
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
     <!--<h2>Welcome, <?php echo htmlspecialchars($managerDetails['FirstName'] . ' ' . $managerDetails['LastName']); ?></h2> -->
     <a href="?action=logout" class="btn btn-danger float-right">Logout</a> <!-- Add Logout Button -->
-=======
-<header class="header d-flex justify-content-between align-items-center p-3">
-    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <a href="../php/index.php" class="btn-danger">Logout</a> <!-- Logout Button -->
->>>>>>> origin/delrosario
 </header>
 
-<div class="container mt-5">
-    <h2 class="text-center">Welcome to ChooksToJarell Manager Hub!</h2>
-    <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
-            <p>What do you want to do today?</p>
-            <a href="manage_attendance.php" class="btn btn-primary btn-lg btn-block mb-3">📋 Attendance Logs</a>
-            <a href="manage_employees.php" class="btn btn-primary btn-lg btn-block mb-3">👥 Manage Employees</a>
-            <a href="show_requests.php" class="btn btn-primary btn-lg btn-block mb-3">📩 Show Requests</a>
-            <a href="payroll.php" class="btn btn-primary btn-lg btn-block mb-3">💰 Payroll</a>
-            <a href="manager_hub.php" class="btn btn-primary btn-lg btn-block mb-3">🏢 Manager Hub</a>
-        </div>
-    </div>
+<!-- Attendance Records Section -->
+<h3>Attendance Records</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Record ID</th>
+            <th>Employee ID</th>
+            <th>Date</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($attendanceRecords as $record): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($record['RecordID']); ?></td>
+                <td><?php echo htmlspecialchars($record['EmployeeID']); ?></td>
+                <td><?php echo htmlspecialchars($record['Date']); ?></td>
+                <td><?php echo htmlspecialchars($record['CheckIn']); ?></td>
+                <td><?php echo htmlspecialchars($record['CheckOut']); ?></td>
+                <td><?php echo htmlspecialchars($record['Status']); ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
 </div>
+ <!-- Back Button -->
+ <div class="mb-3">
+        <a href="manager.php" class="btn btn-secondary">🔙 Back to Manager Hub</a>
+    </div>
 
-<footer class="footer mt-5">
+    <footer class="footer mt-5">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
+
+<script>
+    </script>
 </body>
 </html>
