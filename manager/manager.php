@@ -9,65 +9,9 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-<<<<<<< HEAD
-<?php
-session_start();
-require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
-
-// Add this logout logic at the top of the file
-if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    session_start();
-    session_destroy();
-    header("Location: manager_login.php"); // Redirect to login page
-    exit;
-}
-
-// Check if the manager is logged in
-//if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
- //   header("Location: manager_login.php"); // Redirect to login page if not logged in
- //   exit;
-//}
-
-// Retrieve manager details from the session
-//$managerID = isset($_SESSION['manager_id']) ? $_SESSION['manager_id'] : null;
-//$managerName = isset($_SESSION['manager_name']) ? $_SESSION['manager_name'] : null;
-
-// If session variables are missing, redirect to login
-//if (!$managerID || !$managerName) {
- //   header("Location: manager_login.php");
-  //  exit;
-//}
-
-// Fetch manager details, employees, and attendance records
-$database = new Database();
-$db = $database->getConnection();
-$procedures = new Procedures($db);
-
-try {
-    // Fetch manager details using getManagerByID
-   // $managerDetails = $procedures->getManagerByID($managerID);
-
-    // Fetch all employees using getAllEmployees
-    $employees = $procedures->getAllEmployees();
-
-    // Fetch all attendance logs for a specific employee (replace 1 with the desired EmployeeID)
-    $employeeID = 1; // Example EmployeeID
-    $attendanceRecords = $procedures->getAllAttendanceLogs($employeeID);
-} catch (Exception $e) {
-    die("Error: " . $e->getMessage());
-}
-?>
-
-<header class="header">
-    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <!--<h2>Welcome, <?php echo htmlspecialchars($managerDetails['FirstName'] . ' ' . $managerDetails['LastName']); ?></h2> -->
-    <a href="?action=logout" class="btn btn-danger float-right">Logout</a> <!-- Add Logout Button -->
-=======
 <header class="header d-flex justify-content-between align-items-center p-3">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
     <a href="../php/index.php" class="btn-danger">Logout</a> <!-- Logout Button -->
->>>>>>> origin/delrosario
 </header>
 
 <div class="container mt-5">
