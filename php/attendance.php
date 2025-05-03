@@ -92,6 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 text: 'Attendance recorded successfully!',
                 icon: 'success',
                 confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload(); // Reload the page to display updated records
             });
         </script>";
     } else {
@@ -107,6 +109,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $stmt->close();
 }
+
+// Retrieve attendance records
+$attendanceRecords = [];
+$stmt = $conn->prepare("CALL GetAllAttendanceLogs(?)");
+$employee_id = 1; // Replace with the desired EmployeeID or session-based EmployeeID
+$stmt->bind_param("i", $employee_id);
+
+$result = $stmt->get_result();
+$stmt->execute();
+if ($result) {
+    $attendanceRecords = $result->fetch_all(MYSQLI_ASSOC);
+}
+$stmt->close();
 ?>
 
 
@@ -155,6 +170,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
     </div>
 </div>
+
+<?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($attendanceRecords) && !empty($attendanceRecords)): ?>
+<div class="container mt-5">
+    <h3 class="text-center">Attendance Records</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Date</th>
+                <th>Check-In</th>
+                <th>Check-Out</th>
+                <th>Status</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($attendanceRecords as $record): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($record['EmployeeID']); ?></td>
+                    <td><?php echo htmlspecialchars($record['Date']); ?></td>
+                    <td><?php echo htmlspecialchars($record['CheckIn']); ?></td>
+                    <td><?php echo htmlspecialchars($record['CheckOut']); ?></td>
+                    <td><?php echo htmlspecialchars($record['Status']); ?></td>
+                    <td><?php echo htmlspecialchars($record['Remarks']); ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php endif; ?>
 
 <footer class="footer">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>

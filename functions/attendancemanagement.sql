@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 03, 2025 at 04:29 AM
+-- Generation Time: May 03, 2025 at 04:37 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -130,13 +130,12 @@ DELIMITER ;
 --
 
 CREATE TABLE `attendance_log` (
-  `LogID` int(11) NOT NULL,
-  `ShiftID` int(11) DEFAULT NULL,
-  `Status` varchar(50) DEFAULT NULL,
-  `LateMinutes` int(11) DEFAULT NULL,
-  `Notes` text DEFAULT NULL,
-  `VerifiedBy` int(11) DEFAULT NULL,
-  `EmployeeID` int(11) DEFAULT NULL
+  `EmployeeID` int(11) DEFAULT NULL,
+  `Date` date NOT NULL,
+  `CheckIn` time DEFAULT NULL,
+  `CheckOut` time DEFAULT NULL,
+  `Status` varchar(20) DEFAULT NULL,
+  `Remarks` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -302,9 +301,7 @@ CREATE TABLE `shift_duty_info` (
 -- Indexes for table `attendance_log`
 --
 ALTER TABLE `attendance_log`
-  ADD PRIMARY KEY (`LogID`),
-  ADD KEY `ShiftID` (`ShiftID`),
-  ADD KEY `VerifiedBy` (`VerifiedBy`);
+  ADD KEY `fk_attendance_employee` (`EmployeeID`);
 
 --
 -- Indexes for table `employee_fixed_schedule`
@@ -367,12 +364,6 @@ ALTER TABLE `shift_duty_info`
 --
 
 --
--- AUTO_INCREMENT for table `attendance_log`
---
-ALTER TABLE `attendance_log`
-  MODIFY `LogID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `employee_fixed_schedule`
 --
 ALTER TABLE `employee_fixed_schedule`
@@ -428,8 +419,7 @@ ALTER TABLE `shift_duty_info`
 -- Constraints for table `attendance_log`
 --
 ALTER TABLE `attendance_log`
-  ADD CONSTRAINT `attendance_log_ibfk_1` FOREIGN KEY (`ShiftID`) REFERENCES `employee_shift` (`ShiftID`),
-  ADD CONSTRAINT `attendance_log_ibfk_2` FOREIGN KEY (`VerifiedBy`) REFERENCES `manager_info` (`ManagerID`);
+  ADD CONSTRAINT `fk_attendance_employee` FOREIGN KEY (`EmployeeID`) REFERENCES `employee_info` (`EmployeeID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `employee_fixed_schedule`
