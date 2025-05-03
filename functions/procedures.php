@@ -63,5 +63,9 @@ class Procedures {
         $result = $this->callProcedure('LoginManagerByID', [$managerID, $password]);
         return $result->fetch_assoc();
     }
+
+    public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
+        $this->callProcedure('CreateEmployee', [$firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
+    }
 }
 ?>

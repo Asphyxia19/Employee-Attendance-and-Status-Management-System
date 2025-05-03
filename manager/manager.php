@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-<header class="header">
+<header class="header d-flex justify-content-between align-items-center p-3">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <a href="../php/index.php" class="btn-danger">Logout</a> <!-- Logout Button -->
 </header>
 
 <div class="container mt-5">

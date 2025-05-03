@@ -18,7 +18,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $db = $database->getConnection();
     $procedures = new Procedures($db);
 
-    $managerID = intval($_POST['manager_id']); // Use ManagerID instead of FirstName
+    $managerID = intval($_POST['ManagerID']); // Use ManagerID instead of FirstName
     $password = htmlspecialchars(trim($_POST['password']));
 
     // Attempt to log in
@@ -62,8 +62,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="col-md-6">
             <form method="POST" action="manager_login.php">
                 <div class="form-group">
-                    <label for="first_name">First Name</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    <label for="ManagerID">Manager ID</label>
+                    <input type="text" class="form-control" id="ManagerID" name="ManagerID" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>

@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Employees Section -->
     <h3>Employees</h3>
-    <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#employeeModal" onclick="clearForm()">Add Employee</button>
+    <button class="btn btn-primary mb-3" onclick="window.location.href='manage_add_employee.php'">Add Employee</button>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -116,11 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td><?php echo htmlspecialchars($employee['Email']); ?></td>
                     <td>
                         <a href="manage_edit_employees.php?employee_id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                        <form method="POST" action="manage_employees.php" style="display:inline;">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="employee_id" value="<?php echo $employee['EmployeeID']; ?>">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -185,46 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
 <div class="container mt-5">
-    <h3>Attendance Records</h3>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Log ID</th>
-                <th>Shift ID</th>
-                <th>Status</th>
-                <th>Late Minutes</th>
-                <th>Notes</th>
-                <th>Verified By</th>
-                <th>Employee ID</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            $employeeID = 1; // Replace with the desired EmployeeID
-            $attendanceRecords = $procedures->getAllAttendanceLogs($employeeID);
-
-            foreach ($attendanceRecords as $record) {
-                echo "<tr>";
-                echo "<td>" . htmlspecialchars($record['LogID']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['ShiftID']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['Status']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['LateMinutes']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['Notes']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['VerifiedBy']) . "</td>";
-                echo "<td>" . htmlspecialchars($record['EmployeeID']) . "</td>";
-                echo "</tr>";
-            }
-            ?>
-        </tbody>
-    </table>
-</div>
-
-<footer class="footer mt-5">
-    <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
-</footer>
-
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
 
 <script>
     // Clear the form for adding a new employee
@@ -265,6 +221,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             })
             .catch(error => console.error('Error:', error));
         }
+    }
+
+    function confirmDelete(employeeID) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Perform the delete action
+                fetch('manage_employees.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'delete',
+                        employee_id: employeeID
+                    })
+                })
+                .then(response => response.text())
+                .then(data => {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'The employee has been deleted.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload(); // Reload the page to reflect changes
+                    });
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while deleting the employee.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    console.error('Error:', error);
+                });
+            }
+        });
     }
 </script>
 
