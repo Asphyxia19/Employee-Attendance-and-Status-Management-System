@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 03, 2025 at 04:37 PM
+-- Generation Time: May 04, 2025 at 01:39 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -52,13 +52,12 @@ END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllAttendanceLogs` (IN `p_EmployeeID` INT)   BEGIN
     SELECT 
-        LogID, 
-        ShiftID, 
+       EmployeeID, 
+        Date, 
+        CheckIn, 
+        CheckOut, 
         Status, 
-        LateMinutes, 
-        Notes, 
-        VerifiedBy, 
-        EmployeeID
+        Remarks
     FROM 
         attendance_log
     WHERE 

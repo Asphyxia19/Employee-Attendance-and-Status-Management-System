@@ -81,11 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Proceed to record attendance
-    $stmt = $conn->prepare("CALL CrudEmployeeAttendance('CREATE', NULL, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssss", $employee_id, $attendance_date, $check_in, $check_out, $status, $remarks);
-
-    if ($stmt->execute()) {
+    // Use the Procedures class to insert attendance
+    $procedures = new Procedures($conn);
+    try {
+        $procedures->insertAttendanceLog($employee_id, $attendance_date, $check_in, $check_out, $status, $remarks);
         echo "<script>
             Swal.fire({
                 title: 'Success!',
@@ -96,18 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 location.reload(); // Reload the page to display updated records
             });
         </script>";
-    } else {
+    } catch (Exception $e) {
         echo "<script>
             Swal.fire({
                 title: 'Error!',
-                text: 'Failed to record attendance. Please try again.',
+                text: 'Failed to record attendance: " . $e->getMessage() . "',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
         </script>";
     }
-
-    $stmt->close();
 }
 
 // Retrieve attendance records

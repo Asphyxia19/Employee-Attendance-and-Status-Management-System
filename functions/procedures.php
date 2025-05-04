@@ -67,5 +67,9 @@ class Procedures {
     public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
         $this->callProcedure('CreateEmployee', [$firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
     }
+
+    public function insertAttendanceLog($employeeID, $date, $checkIn, $checkOut, $status, $remarks) {
+        $this->callProcedure('InsertAttendanceLog', [$employeeID, $date, $checkIn, $checkOut, $status, $remarks]);
+    }
 }
 ?>
