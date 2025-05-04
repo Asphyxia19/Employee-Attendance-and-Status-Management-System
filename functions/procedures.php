@@ -71,5 +71,25 @@ class Procedures {
     public function insertAttendanceLog($employeeID, $date, $checkIn, $checkOut, $status, $remarks) {
         $this->callProcedure('InsertAttendanceLog', [$employeeID, $date, $checkIn, $checkOut, $status, $remarks]);
     }
+
+
+    public function getAllManagers() {
+        $result = $this->callProcedure('GetAllManagers');
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
+    public function deleteManager($managerID) {
+        $this->callProcedure('DeleteManager', [$managerID]);
+    }
+    public function createManager($firstName, $lastName, $email, $password) {
+        $this->callProcedure('CreateManager', [$firstName, $lastName, $email, $password]);
+    }
+
+    public function getManagerByID($managerID) {
+        $result = $this->callProcedure('GetManagerByID', [$managerID]);
+        return $result->fetch_assoc();
+        
+    }public function updateManager($managerID, $firstName, $lastName, $email) {
+        $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $email]);
+    }
 }
 ?>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 04, 2025 at 01:39 AM
+-- Generation Time: May 04, 2025 at 03:37 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -25,29 +25,40 @@ DELIMITER $$
 --
 -- Procedures
 --
-CREATE DEFINER=`root`@`localhost` PROCEDURE `CreateEmployee` (IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_ContactNumber` VARCHAR(20), IN `p_Email` VARCHAR(255), IN `p_Address` TEXT, IN `p_Position` VARCHAR(100), IN `p_HireDate` DATE)   BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CreateEmployee` (IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_ContactNumber` VARCHAR(20), IN `p_Email` VARCHAR(255), IN `p_Address` TEXT, IN `p_Position` VARCHAR(100), IN `p_HireDate` DATE, IN `p_Password` VARCHAR(255))   BEGIN
     INSERT INTO employee_info (
-        FirstName, 
-        LastName, 
-        ContactNumber, 
-        Email, 
-        Address, 
-        Position, 
-        HireDate
+        FirstName,
+        LastName,
+        ContactNumber,
+        Email,
+        Address,
+        Position,
+        HireDate,
+        Password -- Include the Password field
     ) VALUES (
-        p_FirstName, 
-        p_LastName, 
-        p_ContactNumber, 
-        p_Email, 
-        p_Address, 
-        p_Position, 
-        p_HireDate
+        p_FirstName,
+        p_LastName,
+        p_ContactNumber,
+        p_Email,
+        p_Address,
+        p_Position,
+        p_HireDate,
+        p_Password -- Insert the Password value
     );
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CreateManager` (IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_Email` VARCHAR(255), IN `p_Password` VARCHAR(255))   BEGIN
+    INSERT INTO manager_info (FirstName, LastName, Email, Password)
+    VALUES (p_FirstName, p_LastName, p_Email, p_Password);
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteEmployee` (IN `p_EmployeeID` INT)   BEGIN
     DELETE FROM employee_info
     WHERE EmployeeID = p_EmployeeID;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteManager` (IN `p_ManagerID` INT)   BEGIN
+    DELETE FROM manager_info WHERE ManagerID = p_ManagerID;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllAttendanceLogs` (IN `p_EmployeeID` INT)   BEGIN
@@ -78,6 +89,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllEmployees` ()   BEGIN
         employee_info;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllManagers` ()   BEGIN
+    SELECT ManagerID, FirstName, LastName, Email FROM manager_info;
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetEmployeeByID` (IN `p_EmployeeID` INT)   BEGIN
     SELECT 
         EmployeeID, 
@@ -92,6 +107,30 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GetEmployeeByID` (IN `p_EmployeeID`
         employee_info
     WHERE 
         EmployeeID = p_EmployeeID;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetManagerByID` (IN `p_ManagerID` INT)   BEGIN
+    SELECT ManagerID, FirstName, LastName, Email
+    FROM manager_info
+    WHERE ManagerID = p_ManagerID;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertAttendanceLog` (IN `p_EmployeeID` INT, IN `p_Date` DATE, IN `p_CheckIn` TIME, IN `p_CheckOut` TIME, IN `p_Status` VARCHAR(20), IN `p_Remarks` TEXT)   BEGIN
+    INSERT INTO attendance_log (
+        EmployeeID,
+        Date,
+        CheckIn,
+        CheckOut,
+        Status,
+        Remarks
+    ) VALUES (
+        p_EmployeeID,
+        p_Date,
+        p_CheckIn,
+        p_CheckOut,
+        p_Status,
+        p_Remarks
+    );
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `LoginManagerByID` (IN `p_ManagerID` INT, IN `p_Password` VARCHAR(255))   BEGIN
@@ -118,6 +157,14 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateEmployee` (IN `p_EmployeeID` 
         HireDate = p_HireDate
     WHERE 
         EmployeeID = p_EmployeeID;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateManager` (IN `p_ManagerID` INT, IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_Email` VARCHAR(255))   BEGIN
+    UPDATE manager_info
+    SET FirstName = p_FirstName,
+        LastName = p_LastName,
+        Email = p_Email
+    WHERE ManagerID = p_ManagerID;
 END$$
 
 DELIMITER ;
@@ -176,10 +223,11 @@ CREATE TABLE `employee_info` (
 --
 
 INSERT INTO `employee_info` (`EmployeeID`, `FirstName`, `LastName`, `ContactNumber`, `Email`, `Address`, `Position`, `HireDate`, `Password`) VALUES
-(10002, 'RUBYYCHAN', 'HAIIIIIIIIIII', '09181234567', 'maria.santos@example.com', 'San Juan Batangas', 'Janitor', '2023-11-15', '23456'),
+(10002, 'RUBYYCHAN', 'HAIIII', '09181234567', 'maria.santos@example.com', 'San Juan Batangas', 'Janitor', '2023-11-15', '23456'),
 (10004, 'Ana', 'Lopez', '09201234567', 'ana.lopez@example.com', '321 Rizal Blvd., Pasig City', 'Cashier', '2021-09-30', '45678'),
 (10005, 'Carlos', 'Torres', '09211234567', 'carlos.torres@example.com', '654 Katipunan Ave., Manila', 'Burger', '2020-01-20', '56789'),
-(10006, 'Justin Kyle', 'Balubal', '09653527892', 'balubalcutie69@gmail.com', 'New York City, Philippines', 'Nuggets Station', '2025-05-02', '');
+(10006, 'Justin Kyle', 'Balubal', '09653527892', 'balubalcutie69@gmail.com', 'New York City, Philippines', 'Nuggets Station', '2025-05-02', ''),
+(10008, 'Gian', 'Diaz', '099365841', 'giandiaz@gmail.com', 'Monte Carlo', 'Mission', '2025-05-23', '$2y$1');
 
 -- --------------------------------------------------------
 
@@ -372,7 +420,7 @@ ALTER TABLE `employee_fixed_schedule`
 -- AUTO_INCREMENT for table `employee_info`
 --
 ALTER TABLE `employee_info`
-  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10008;
+  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10009;
 
 --
 -- AUTO_INCREMENT for table `employee_shift`

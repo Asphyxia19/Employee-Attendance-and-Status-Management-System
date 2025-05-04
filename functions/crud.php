@@ -83,6 +83,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || $_SERVER["REQUEST_METHOD"] == "GET")
         default:
             echo "Invalid action specified.";
             break;
+
+        case 'deleteManager':
+            $managerID = intval($_POST['manager_id']);
+            try {
+                $procedures->deleteManager($managerID);
+                echo "Manager deleted successfully!";
+            } catch (Exception $e) {
+                echo "Error: " . $e->getMessage();
+            }
+            break;
     }
+    
 }
 ?>
