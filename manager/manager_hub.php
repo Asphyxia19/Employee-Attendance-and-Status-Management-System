@@ -43,7 +43,7 @@ try {
 
     <!-- Managers Section -->
     <h3>Managers</h3>
-    <button class="btn btn-primary mb-3" onclick="window.location.href='add_manager.php'">Add Manager</button>
+    <button class="btn btn-primary mb-3" onclick="window.location.href='manage_add_manager.php'">Add Manager</button>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -62,7 +62,7 @@ try {
                     <td><?php echo htmlspecialchars($manager['LastName']); ?></td>
                     <td><?php echo htmlspecialchars($manager['Email']); ?></td>
                     <td>
-                        <a href="edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="manage_edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
                         <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $manager['ManagerID']; ?>)">Delete</button>
                     </td>
                 </tr>

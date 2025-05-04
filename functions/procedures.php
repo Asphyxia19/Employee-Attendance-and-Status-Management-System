@@ -91,5 +91,9 @@ class Procedures {
     }public function updateManager($managerID, $firstName, $lastName, $email) {
         $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $email]);
     }
+
+    public function updateManagerWithID($originalManagerID, $newManagerID, $firstName, $lastName, $email) {
+        $this->callProcedure('UpdateManagerWithID', [$originalManagerID, $newManagerID, $firstName, $lastName, $email]);
+    }
 }
 ?>

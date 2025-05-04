@@ -36,13 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['manager_id'])) {
         exit;
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $managerID = intval($_POST['manager_id']);
+    $originalManagerID = intval($_POST['original_manager_id']); // Original ManagerID
+    $managerID = intval($_POST['manager_id']); // New ManagerID
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $lastName = htmlspecialchars(trim($_POST['last_name']));
     $email = htmlspecialchars(trim($_POST['email']));
 
     try {
-        $procedures->updateManager($managerID, $firstName, $lastName, $email);
+        $procedures->updateManagerWithID($originalManagerID, $managerID, $firstName, $lastName, $email);
         echo "
         <script>
             Swal.fire({
@@ -77,7 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['manager_id'])) {
 <div class="container mt-5">
     <h2 class="text-center">Edit Manager</h2>
     <form action="manage_edit_manager.php" method="POST">
-        <input type="hidden" name="manager_id" value="<?php echo htmlspecialchars($manager['ManagerID']); ?>">
+        <input type="hidden" name="original_manager_id" value="<?php echo htmlspecialchars($manager['ManagerID']); ?>">
+        <div class="form-group">
+            <label for="manager_id">Manager ID</label>
+            <input type="text" class="form-control" id="manager_id" name="manager_id" value="<?php echo htmlspecialchars($manager['ManagerID']); ?>" required>
+        </div>
         <div class="form-group">
             <label for="first_name">First Name</label>
             <input type="text" class="form-control" id="first_name" name="first_name" value="<?php echo htmlspecialchars($manager['FirstName']); ?>" required>

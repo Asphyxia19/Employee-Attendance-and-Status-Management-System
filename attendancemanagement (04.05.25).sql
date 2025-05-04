@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 04, 2025 at 03:37 AM
+-- Generation Time: May 04, 2025 at 02:54 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -167,6 +167,15 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateManager` (IN `p_ManagerID` IN
     WHERE ManagerID = p_ManagerID;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateManagerWithID` (IN `p_OriginalManagerID` INT, IN `p_NewManagerID` INT, IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_Email` VARCHAR(255))   BEGIN
+    UPDATE manager_info
+    SET ManagerID = p_NewManagerID,
+        FirstName = p_FirstName,
+        LastName = p_LastName,
+        Email = p_Email
+    WHERE ManagerID = p_OriginalManagerID;
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -207,7 +216,7 @@ CREATE TABLE `employee_fixed_schedule` (
 --
 
 CREATE TABLE `employee_info` (
-  `EmployeeID` int(11) NOT NULL,
+  `EmployeeID` int(5) NOT NULL,
   `FirstName` varchar(255) DEFAULT NULL,
   `LastName` varchar(255) DEFAULT NULL,
   `ContactNumber` varchar(20) DEFAULT NULL,
@@ -252,7 +261,7 @@ CREATE TABLE `employee_shift` (
 --
 
 CREATE TABLE `manager_info` (
-  `ManagerID` int(11) NOT NULL,
+  `ManagerID` int(7) NOT NULL,
   `FirstName` varchar(255) DEFAULT NULL,
   `LastName` varchar(255) DEFAULT NULL,
   `ContactNumber` varchar(20) DEFAULT NULL,
@@ -265,10 +274,10 @@ CREATE TABLE `manager_info` (
 --
 
 INSERT INTO `manager_info` (`ManagerID`, `FirstName`, `LastName`, `ContactNumber`, `Email`, `Password`) VALUES
-(2917, 'Cheska', 'De Castro', '09938309279', NULL, 'sean'),
-(20001, 'Isabella', 'Garcia', '09981234567', 'isabella.garcia@company.com', 'bandito'),
-(20002, 'Miguel', 'Navarro', '09992234567', 'miguel.navarro@company.com', 'tungtung'),
-(2336324, 'Sean', 'Del Rosario', '09065816503', 'seanmdelrosario@gmail.com', 'manager');
+(2336324, 'Sean', 'Del Rosario', '09065816503', 'seanmdelrosario@gmail.com', 'manager'),
+(2356781, 'Isabella', 'Garcia', '09981234567', 'isabella.garcia@gmail.com', 'bandito'),
+(2648537, 'Miguel', 'Navarro', '09992234567', 'miguel.navarro@company.com', 'tungtung'),
+(2917714, 'Cheska', 'De Castro', '09938309279', 'cheskadecastro00@gmail.com', 'sean');
 
 -- --------------------------------------------------------
 
@@ -420,7 +429,7 @@ ALTER TABLE `employee_fixed_schedule`
 -- AUTO_INCREMENT for table `employee_info`
 --
 ALTER TABLE `employee_info`
-  MODIFY `EmployeeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10009;
+  MODIFY `EmployeeID` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10009;
 
 --
 -- AUTO_INCREMENT for table `employee_shift`
@@ -432,7 +441,7 @@ ALTER TABLE `employee_shift`
 -- AUTO_INCREMENT for table `manager_info`
 --
 ALTER TABLE `manager_info`
-  MODIFY `ManagerID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2336326;
+  MODIFY `ManagerID` int(7) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2147483648;
 
 --
 -- AUTO_INCREMENT for table `overtime_log`
