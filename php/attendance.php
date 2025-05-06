@@ -10,7 +10,7 @@
 </head>
 <body>
 <header class="header">
-<img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
 <?php 
 require_once '../functions/db_connection.php';
@@ -19,13 +19,13 @@ require_once '../functions/procedures.php';
 // Define the validateAttendance function
 function validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status) {
     // Check if the employee exists
-    $query = "SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?";
+    $query = "SELECT EmployeeID FROM employee_info WHERE EmployeeID = :employee_id";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $employee_id);
+    $stmt->bindParam(':employee_id', $employee_id, PDO::PARAM_INT);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($result->num_rows === 0) {
+    if (!$result) {
         return "Employee ID does not exist.";
     }
 
@@ -109,19 +109,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // Retrieve attendance records
 $attendanceRecords = [];
-$stmt = $conn->prepare("CALL GetAllAttendanceLogs(?)");
-$employee_id = 1; // Replace with the desired EmployeeID or session-based EmployeeID
-$stmt->bind_param("i", $employee_id);
-
-$result = $stmt->get_result();
-$stmt->execute();
-if ($result) {
-    $attendanceRecords = $result->fetch_all(MYSQLI_ASSOC);
+try {
+    $employee_id = 1; // Replace with the desired EmployeeID or session-based EmployeeID
+    $stmt = $conn->prepare("CALL GetAllAttendanceLogs(:employeeID)");
+    $stmt->bindParam(':employeeID', $employee_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    echo "<script>
+        Swal.fire({
+            title: 'Error!',
+            text: 'Failed to retrieve attendance records: " . $e->getMessage() . "',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    </script>";
 }
-$stmt->close();
 ?>
-
-
 
 <div class="container mt-5 text-center">
     <h2 class="text-center">Attendance Dashboard</h2>
@@ -164,11 +168,10 @@ $stmt->close();
                 <a href="index.php" class="btn btn-warning btn-lg">Back</a>
             </div>
         </div>
-        
     </div>
 </div>
 
-<?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($attendanceRecords) && !empty($attendanceRecords)): ?>
+<?php if (!empty($attendanceRecords)): ?>
 <div class="container mt-5">
     <h3 class="text-center">Attendance Records</h3>
     <table class="table table-bordered">

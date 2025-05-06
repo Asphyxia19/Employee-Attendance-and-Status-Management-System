@@ -26,7 +26,7 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
-    // Fetch all managers
+    // Fetch all managers using PDO
     $managers = $procedures->getAllManagers();
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());

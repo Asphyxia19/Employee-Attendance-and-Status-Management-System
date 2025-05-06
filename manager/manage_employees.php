@@ -14,45 +14,27 @@ session_start();
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
 
-// Add this logout logic at the top of the file
+// Logout logic
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    session_start();
     session_destroy();
-    header("Location: manager_login.php"); // Redirect to login page
+    header("Location: manager_login.php");
     exit;
 }
 
 // Check if the manager is logged in
-//if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
- //   header("Location: manager_login.php"); // Redirect to login page if not logged in
- //   exit;
-//}
+if (!isset($_SESSION['manager_id'])) {
+    header("Location: manager_login.php");
+    exit;
+}
 
-// Retrieve manager details from the session
-//$managerID = isset($_SESSION['manager_id']) ? $_SESSION['manager_id'] : null;
-//$managerName = isset($_SESSION['manager_name']) ? $_SESSION['manager_name'] : null;
-
-// If session variables are missing, redirect to login
-//if (!$managerID || !$managerName) {
- //   header("Location: manager_login.php");
-  //  exit;
-//}
-
-// Fetch manager details, employees, and attendance records
+// Initialize database and procedures
 $database = new Database();
 $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
-    // Fetch manager details using getManagerByID
-   // $managerDetails = $procedures->getManagerByID($managerID);
-
-    // Fetch all employees using getAllEmployees
+    // Fetch all employees
     $employees = $procedures->getAllEmployees();
-
-    // Fetch all attendance logs for a specific employee (replace 1 with the desired EmployeeID)
-    $employeeID = isset($_GET['Employee_id']) ? intval($_GET['Employee_id']) : 1; // Default to 1 if not provided
-    $attendanceRecords = $procedures->getAllAttendanceLogs($employeeID);
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }
@@ -61,30 +43,58 @@ try {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
 
-    if ($action === 'update') {
-        $employeeID = intval($_POST['employee_id']);
-        $firstName = htmlspecialchars(trim($_POST['first_name']));
-        $lastName = htmlspecialchars(trim($_POST['last_name']));
-        $contactNumber = htmlspecialchars(trim($_POST['contact_number']));
-        $email = htmlspecialchars(trim($_POST['email']));
-        $address = htmlspecialchars(trim($_POST['address']));
-        $position = htmlspecialchars(trim($_POST['position']));
-        $hireDate = htmlspecialchars(trim($_POST['hire_date']));
+    try {
+        if ($action === 'update') {
+            $employeeID = intval($_POST['employee_id']);
+            $firstName = htmlspecialchars(trim($_POST['first_name']));
+            $lastName = htmlspecialchars(trim($_POST['last_name']));
+            $contactNumber = htmlspecialchars(trim($_POST['contact_number']));
+            $email = htmlspecialchars(trim($_POST['email']));
+            $address = htmlspecialchars(trim($_POST['address']));
+            $position = htmlspecialchars(trim($_POST['position']));
+            $hireDate = htmlspecialchars(trim($_POST['hire_date']));
 
-        $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
-        echo "<script>alert('Employee updated successfully!'); window.location.href = 'manage_employees.php';</script>";
-    } elseif ($action === 'delete') {
-        $employeeID = intval($_POST['employee_id']);
-        $procedures->deleteEmployee($employeeID);
-        echo "<script>alert('Employee deleted successfully!'); window.location.href = 'manage_employees.php';</script>";
+            $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+            echo "<script>
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Employee updated successfully!',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = 'manage_employees.php';
+                });
+            </script>";
+        } elseif ($action === 'delete') {
+            $employeeID = intval($_POST['employee_id']);
+            $procedures->deleteEmployee($employeeID);
+            echo "<script>
+                Swal.fire({
+                    title: 'Deleted!',
+                    text: 'Employee deleted successfully!',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = 'manage_employees.php';
+                });
+            </script>";
+        }
+    } catch (Exception $e) {
+        echo "<script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'An error occurred: " . $e->getMessage() . "',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
     }
 }
 ?>
 
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <!--<h2>Welcome, <?php echo htmlspecialchars($managerDetails['FirstName'] . ' ' . $managerDetails['LastName']); ?></h2> -->
-    <a href="?action=logout" class="btn btn-danger float-right">Logout</a> <!-- Add Logout Button -->
+    <a href="?action=logout" class="btn btn-danger float-right">Logout</a>
 </header>
 
 <div class="container mt-5">
@@ -124,105 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </table>
 </div>
 
-<!-- Employee Modal --> 
-<div class="modal fade" id="employeeModal" tabindex="-1" role="dialog" aria-labelledby="employeeModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form id="employeeForm" action="manage_edit_employee.php" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="employeeModalLabel">Add/Edit Employee</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="action" id="action" value="update">
-                    <input type="hidden" name="employee_id" id="employee_id">
-                    <div class="form-group">
-                        <label for="first_name">First Name</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="last_name">Last Name</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="contact_number">Contact Number</label>
-                        <input type="text" class="form-control" id="contact_number" name="contact_number" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="address">Address</label>
-                        <textarea class="form-control" id="address" name="address" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="position">Position</label>
-                        <input type="text" class="form-control" id="position" name="position" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="hire_date">Hire Date</label>
-                        <input type="date" class="form-control" id="hire_date" name="hire_date" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
- <!-- Back Button -->
- <div class="mb-3">
-        <a href="manager.php" class="btn btn-secondary">🔙 Back to Manager Hub</a>
-    </div>
-
-<div class="container mt-5">
-
 <script>
-    // Clear the form for adding a new employee
-    function clearForm() {
-        document.getElementById('employeeForm').reset();
-        document.getElementById('action').value = 'create';
-        document.getElementById('employee_id').value = '';
-    }
-
-    // Populate the form for editing an employee
-    function editEmployee(employee) {
-        document.getElementById('action').value = 'update';
-        document.getElementById('employee_id').value = employee.EmployeeID;
-        document.getElementById('first_name').value = employee.FirstName;
-        document.getElementById('last_name').value = employee.LastName;
-        document.getElementById('contact_number').value = employee.ContactNumber;
-        document.getElementById('email').value = employee.Email;
-        document.getElementById('address').value = employee.Address;
-        document.getElementById('position').value = employee.Position;
-        document.getElementById('hire_date').value = employee.HireDate;
-    }
-
-    // Delete an employee
-    function deleteEmployee(employeeID) {
-        if (confirm('Are you sure you want to delete this employee?')) {
-            fetch('crud.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'delete',
-                    employee_id: employeeID
-                })
-            })
-            .then(response => response.text())
-            .then(data => {
-                alert(data);
-                location.reload();
-            })
-            .catch(error => console.error('Error:', error));
-        }
-    }
-
     function confirmDelete(employeeID) {
         Swal.fire({
             title: 'Are you sure?',
@@ -234,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Perform the delete action
                 fetch('manage_employees.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -251,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
-                        location.reload(); // Reload the page to reflect changes
+                        location.reload();
                     });
                 })
                 .catch(error => {

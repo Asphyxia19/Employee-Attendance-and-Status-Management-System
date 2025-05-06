@@ -21,12 +21,10 @@ try {
 
     // Fetch all attendance logs for a specific employee (replace 1 with the desired EmployeeID)
     $employeeID = 1; // Example EmployeeID
-    $stmt = $db->prepare("CALL GetAllAttendanceLogs(?)");
-    $stmt->bind_param("i", $employeeID);
+    $stmt = $db->prepare("CALL GetAllAttendanceLogs(:employeeID)");
+    $stmt->bindParam(':employeeID', $employeeID, PDO::PARAM_INT);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $attendanceRecords = $result->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
+    $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }

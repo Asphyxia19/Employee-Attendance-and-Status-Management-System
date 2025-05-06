@@ -13,11 +13,13 @@
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
 
+// Initialize database and procedures
 $database = new Database();
 $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
+    // Fetch employee details for editing
     $employeeID = intval($_GET['employee_id']);
     $employee = $procedures->getEmployeeByID($employeeID);
 
@@ -36,6 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         exit;
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle form submission
     $employeeID = intval($_POST['employee_id']);
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $lastName = htmlspecialchars(trim($_POST['last_name']));
@@ -44,9 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
     $address = htmlspecialchars(trim($_POST['address']));
     $position = htmlspecialchars(trim($_POST['position']));
     $hireDate = htmlspecialchars(trim($_POST['hire_date']));
+    $password = !empty($_POST['password']) ? password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT) : null;
 
     try {
-        $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+        // Update employee with or without password
+        if ($password) {
+            $procedures->updateEmployeeWithPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password);
+        } else {
+            $procedures->updateEmployeeWithoutPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+        }
+
         echo "
         <script>
             Swal.fire({
@@ -109,6 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         <div class="form-group">
             <label for="hire_date">Hire Date</label>
             <input type="date" class="form-control" id="hire_date" name="hire_date" value="<?php echo htmlspecialchars($employee['HireDate']); ?>" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password (leave blank if not changing)</label>
+            <input type="password" class="form-control" id="password" name="password">
         </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="manage_employees.php" class="btn btn-secondary">Cancel</a>
