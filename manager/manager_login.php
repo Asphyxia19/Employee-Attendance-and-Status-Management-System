@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,50 +13,82 @@
 </head>
 <body>
 <?php
-session_start(); // Start the session
 
 require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
-    $procedures = new Procedures($db);
 
-    $managerID = intval($_POST['ManagerID']); // Use ManagerID
+    if (!$db) {
+        die("Database connection failed.");
+    }
+
+    $managerID = htmlspecialchars(trim($_POST['ManagerID']));
     $password = htmlspecialchars(trim($_POST['password']));
 
     try {
-        // Check if the manager exists and the password matches
+        // Check if the manager exists and fetch their details
         $query = "SELECT ManagerID, FirstName, LastName, Password FROM manager_info WHERE ManagerID = :manager_id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':manager_id', $managerID, PDO::PARAM_INT);
         $stmt->execute();
         $manager = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($manager && password_verify($password, $manager['Password'])) {
-            // Password matches, set session variables
-            $_SESSION['manager_id'] = $manager['ManagerID'];
-            $_SESSION['manager_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+        if ($manager) {
+            $storedPassword = $manager['Password'];
 
-            // Redirect with SweetAlert on successful login
-            echo "
-            <script>
-                Swal.fire({
-                    title: 'Welcome!',
-                    text: 'Login Successful',
-                    icon: 'success'
-                }).then(function() {
-                    window.location.href = 'manager.php';  // Redirect to dashboard
-                });
-            </script>";
+            // Check if the password is hashed
+            if (password_verify($password, $storedPassword)) {
+                // Password matches (hashed)
+                $_SESSION['manager_id'] = $manager['ManagerID'];
+                $_SESSION['manager_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'manager.php';  // Redirect to dashboard
+                    });
+                </script>";
+            } elseif ($password === $storedPassword) {
+                // Password matches (plain text)
+                $_SESSION['manager_id'] = $manager['ManagerID'];
+                $_SESSION['manager_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'manager.php';  // Redirect to dashboard
+                    });
+                </script>";
+            } else {
+                // Password does not match
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Invalid password. Please try again.',
+                        icon: 'error'
+                    }).then(function() {
+                        window.location.href = 'manager_login.php';  // Redirect back to login page
+                    });
+                </script>";
+            }
         } else {
-            // Invalid credentials
+            // Manager not found
             echo "
             <script>
                 Swal.fire({
                     title: 'Oops!',
-                    text: 'Invalid Manager ID or password. Please try again.',
+                    text: 'Manager ID not found. Please try again.',
                     icon: 'error'
                 }).then(function() {
                     window.location.href = 'manager_login.php';  // Redirect back to login page

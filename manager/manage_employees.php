@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($employees as $employee): ?>
+            
                 <tr>
                     <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
                     <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
                     </td>
                 </tr>
-            <?php endforeach; ?>
+    
         </tbody>
     </table>
 </div>

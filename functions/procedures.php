@@ -18,20 +18,15 @@ class Procedures {
             die("Failed to prepare statement: " . $this->conn->errorInfo()[2]);
         }
 
-        if (!empty($params)) {
-            foreach ($params as $index => $param) {
-                $stmt->bindValue($index + 1, $param); // Bind parameters dynamically
-            }
+        foreach ($params as $index => $param) {
+            $stmt->bindValue($index + 1, $param);
         }
 
         if (!$stmt->execute()) {
             die("Failed to execute procedure: " . $stmt->errorInfo()[2]);
         }
 
-        $result = $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch all results as an associative array
-        $stmt->closeCursor(); // Close the cursor to allow other queries to run
-
-        return $result;
+        $stmt->closeCursor();
     }
 
     public function getAllEmployees() {
@@ -75,25 +70,28 @@ class Procedures {
     }
 
     public function getAllManagers() {
-        $result = $this->callProcedure('GetAllManagers');
-        return $result; // Already fetched as an associative array
+        return $this->callProcedure('GetAllManagers');
     }
 
     public function deleteManager($managerID) {
         $this->callProcedure('DeleteManager', [$managerID]);
     }
 
-    public function createManager($firstName, $lastName, $email, $password) {
-        $this->callProcedure('CreateManager', [$firstName, $lastName, $email, $password]);
+    public function createManager($firstName, $lastName, $contactNumber, $email, $password) {
+        $this->callProcedure('CreateManager', [$firstName, $lastName, $contactNumber, $email, $password]);
     }
-
+    
     public function getManagerByID($managerID) {
         $result = $this->callProcedure('GetManagerByID', [$managerID]);
         return $result[0] ?? null; // Return the first result or null if empty
     }
 
-    public function updateManager($managerID, $firstName, $lastName, $email) {
-        $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $email]);
+    public function updateManager($managerID, $firstName, $lastName, $contactNumber, $email, $password = null) {
+        if ($password) {
+            $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $contactNumber, $email, $password]);
+        } else {
+            $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $contactNumber, $email, null]);
+        }
     }
 
     public function updateManagerWithID($originalManagerID, $newManagerID, $firstName, $lastName, $email) {
