@@ -18,9 +18,9 @@ if (!isset($_SESSION['manager_id'])) {
     exit;
 }
 ?>
-<header class="header d-flex justify-content-between align-items-center p-3">
+<header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <a href="manager_logout.php" class="btn btn-danger">Logout</a> <!-- Logout Button -->
+    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
 </header>
 
 <div class="container mt-5">
@@ -31,7 +31,6 @@ if (!isset($_SESSION['manager_id'])) {
             <a href="manage_attendance.php" class="btn btn-primary btn-lg btn-block mb-3">📋 Attendance Logs</a>
             <a href="manage_employees.php" class="btn btn-primary btn-lg btn-block mb-3">👥 Manage Employees</a>
             <a href="show_requests.php" class="btn btn-primary btn-lg btn-block mb-3">📩 Show Requests</a>
-            <a href="payroll.php" class="btn btn-primary btn-lg btn-block mb-3">💰 Payroll</a>
             <a href="manager_hub.php" class="btn btn-primary btn-lg btn-block mb-3">🏢 Manager Hub</a>
         </div>
     </div>

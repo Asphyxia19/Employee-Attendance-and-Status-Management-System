@@ -74,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['manager_id'])) {
 
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
 </header>
 <div class="container mt-5">
     <h2 class="text-center">Edit Manager</h2>

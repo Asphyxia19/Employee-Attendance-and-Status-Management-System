@@ -15,7 +15,7 @@ class Procedures {
         $stmt = $this->conn->prepare($query);
 
         if (!$stmt) {
-            die("Failed to prepare statement: " . $this->conn->errorInfo()[2]);
+            die("Failed to prepare statement: " . $this->conn->error);
         }
 
         foreach ($params as $index => $param) {
@@ -23,42 +23,45 @@ class Procedures {
         }
 
         if (!$stmt->execute()) {
-            die("Failed to execute procedure: " . $stmt->errorInfo()[2]);
+            die("Failed to execute procedure: " . $stmt->error);
         }
 
-        $stmt->closeCursor();
+        $result = $stmt->get_result();
+        $stmt->close();
+
+        return $result;
     }
 
     public function getAllEmployees() {
         $result = $this->callProcedure('GetAllEmployees');
-        return $result; // Already fetched as an associative array
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
-
+    
     // Get employee by ID
     public function getEmployeeByID($employeeID) {
         $result = $this->callProcedure('GetEmployeeByID', [$employeeID]);
-        return $result[0] ?? null; // Return the first result or null if empty
+        return $result->fetch_assoc();
     }
-
+    
     // Update employee
     public function updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate) {
         $this->callProcedure('UpdateEmployee', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate]);
     }
-
+    
     // Delete employee
     public function deleteEmployee($employeeID) {
         $this->callProcedure('DeleteEmployee', [$employeeID]);
     }
-
+    
     // Get all attendance logs
     public function getAllAttendanceLogs($employeeID) {
-        $result = $this->callProcedure('GetAllAttendanceLogs', [$employeeID]);
-        return $result; // Already fetched as an associative array
-    }
+    $result = $this->callProcedure('GetAllAttendanceLogs', [$employeeID]);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
 
     public function loginManagerByID($managerID, $password) {
         $result = $this->callProcedure('LoginManagerByID', [$managerID, $password]);
-        return $result[0] ?? null; // Return the first result or null if empty
+        return $result->fetch_assoc();
     }
 
     public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
@@ -70,41 +73,23 @@ class Procedures {
     }
 
     public function getAllManagers() {
-        return $this->callProcedure('GetAllManagers');
+        $result = $this->callProcedure('GetAllManagers');
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     public function deleteManager($managerID) {
         $this->callProcedure('DeleteManager', [$managerID]);
     }
-
-    public function createManager($firstName, $lastName, $contactNumber, $email, $password) {
-        $this->callProcedure('CreateManager', [$firstName, $lastName, $contactNumber, $email, $password]);
+    public function createManager($firstName, $lastName, $email, $password) {
+        $this->callProcedure('CreateManager', [$firstName, $lastName, $email, $password]);
     }
     
     public function getManagerByID($managerID) {
         $result = $this->callProcedure('GetManagerByID', [$managerID]);
-        return $result[0] ?? null; // Return the first result or null if empty
+        return $result->fetch_assoc();
+        
+    }public function updateManager($managerID, $firstName, $lastName, $email) {
+        $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $email]);
     }
-
-    public function updateManager($managerID, $firstName, $lastName, $contactNumber, $email, $password = null) {
-        if ($password) {
-            $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $contactNumber, $email, $password]);
-        } else {
-            $this->callProcedure('UpdateManager', [$managerID, $firstName, $lastName, $contactNumber, $email, null]);
-        }
-    }
-
-    public function updateManagerWithID($originalManagerID, $newManagerID, $firstName, $lastName, $email) {
-        $this->callProcedure('UpdateManagerWithID', [$originalManagerID, $newManagerID, $firstName, $lastName, $email]);
-    }
-
-    public function updateEmployeeWithoutPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate) {
-        $this->callProcedure('UpdateEmployeeWithoutPassword', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate]);
-    }
-
-    public function updateEmployeeWithPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
-        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
-    }
-
 }
 ?>
