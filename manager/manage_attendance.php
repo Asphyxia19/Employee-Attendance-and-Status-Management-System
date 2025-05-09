@@ -58,7 +58,6 @@ try {
                     <th>CheckIn</th>
                     <th>CheckOut</th>
                     <th>Status</th>
-                    <th>Remarks</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,7 +68,6 @@ try {
                         <td><?= htmlspecialchars($record['CheckIn']) ?></td>
                         <td><?= $record['CheckOut'] ? htmlspecialchars($record['CheckOut']) : 'Still In' ?></td>
                         <td><?= htmlspecialchars($record['Status']) ?></td>
-                        <td><?= htmlspecialchars($record['Remarks']) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
