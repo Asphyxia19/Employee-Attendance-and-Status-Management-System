@@ -28,10 +28,9 @@ try {
     // Fetch all employees
     $employees = $procedures->getAllEmployees();
 
-    // Fetch all attendance logs for a specific employee (replace 1 with the desired EmployeeID)
-    $employeeID = 1; // Example EmployeeID
-    $stmt = $db->prepare("CALL GetAllAttendanceLogs(?)");
-    $stmt->bind_param("i", $employeeID);
+    // Fetch all attendance records for all employees
+    $query = "SELECT * FROM attendance_log ORDER BY Date DESC";
+    $stmt = $db->prepare($query);
     $stmt->execute();
     $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
