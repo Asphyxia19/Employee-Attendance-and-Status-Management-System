@@ -18,14 +18,24 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $managerID = htmlspecialchars(trim($_POST['manager_id'])); // Add ManagerID
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $lastName = htmlspecialchars(trim($_POST['last_name']));
+    $contactNumber = htmlspecialchars(trim($_POST['contact_number']));
     $email = htmlspecialchars(trim($_POST['email']));
-    $password = password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT); // Hash the password
+    $password = !empty($_POST['password']) ? password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT) : null;
+
+    // Debugging output
+    var_dump($managerID, $firstName, $lastName, $contactNumber, $email, $password);
 
     try {
-        // Call the procedure to add a new manager
-        $procedures->createManager($firstName, $lastName, $email, $password);
+        if ($password === null) {
+            throw new Exception("Password is required when creating a new manager.");
+        }
+
+        // Call the createManager procedure
+        $procedures->createManager($managerID, $firstName, $lastName, $contactNumber, $email, $password);
+
         echo "
         <script>
             Swal.fire({
@@ -56,10 +66,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
 </header>
 <div class="container mt-5">
     <h2 class="text-center">Add Manager</h2>
     <form action="manage_add_manager.php" method="POST">
+        <div class="form-group">
+            <label for="manager_id">Manager ID</label>
+            <input type="text" class="form-control" id="manager_id" name="manager_id" required>
+        </div>
         <div class="form-group">
             <label for="first_name">First Name</label>
             <input type="text" class="form-control" id="first_name" name="first_name" required>
@@ -67,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label for="last_name">Last Name</label>
             <input type="text" class="form-control" id="last_name" name="last_name" required>
+        </div>
+        <div class="form-group">
+            <label for="contact_number">Contact Number</label>
+            <input type="text" class="form-control" id="contact_number" name="contact_number" required>
         </div>
         <div class="form-group">
             <label for="email">Email</label>
@@ -84,6 +103,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>

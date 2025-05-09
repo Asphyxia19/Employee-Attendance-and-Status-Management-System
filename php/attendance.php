@@ -1,127 +1,81 @@
-<?php 
+<?php
+session_start();
 require_once '../functions/db_connection.php';
-date_default_timezone_set('Asia/Manila');
+require_once '../functions/procedures.php';
 
-$swalScript = '';
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    session_destroy();
+    header("Location: manager_login.php");
+    exit;
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $employee_id = $_POST['employee_id'];
-    $action = $_POST['action'];
-    $current_date = date('Y-m-d');
-    $current_time = date('H:i:s');
+$database = new Database();
+$db = $database->getConnection();
+$procedures = new Procedures($db);
 
-    // Check if employee exists
-    $check_employee = $conn->prepare("SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?");
-    $check_employee->bind_param("i", $employee_id);
-    $check_employee->execute();
-    $check_result = $check_employee->get_result();
+try {
+    // Fetch all employees
+    $employees = $procedures->getAllEmployees();
 
-    if ($check_result->num_rows === 0) {
-        $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
-    } else {
-        $check_attendance = $conn->prepare("SELECT * FROM attendance_log WHERE EmployeeID = ? AND Date = ?");
-        $check_attendance->bind_param("is", $employee_id, $current_date);
-        $check_attendance->execute();
-        $result = $check_attendance->get_result();
-
-        if ($result->num_rows > 0) {
-            $record = $result->fetch_assoc();
-
-            if ($action === 'Time In') {
-                $swalScript = "Swal.fire('Warning', 'You already timed in today.', 'warning');";
-            } elseif ($action === 'Time Out') {
-                if (!empty($record['CheckOut'])) {
-                    $swalScript = "Swal.fire('Info', 'You already timed out today.', 'info');";
-                } else {
-                    $update = $conn->prepare("UPDATE attendance_log SET CheckOut = ? WHERE EmployeeID = ? AND Date = ?");
-                    $update->bind_param("sis", $current_time, $employee_id, $current_date);
-                    if ($update->execute()) {
-                        $swalScript = "Swal.fire('Success', 'Time out recorded.', 'success').then(() => location.reload());";
-                    } else {
-                        $swalScript = "Swal.fire('Error', 'Failed to update time out.', 'error');";
-                    }
-                }
-            }
-        } else {
-            if ($action === 'Time In') {
-                $insert = $conn->prepare("INSERT INTO attendance_log (EmployeeID, Date, CheckIn, Status) VALUES (?, ?, ?, 'Present')");
-                $insert->bind_param("iss", $employee_id, $current_date, $current_time);
-                if ($insert->execute()) {
-                    $swalScript = "Swal.fire('Success', 'Time in recorded.', 'success').then(() => location.reload());";
-                } else {
-                    $swalScript = "Swal.fire('Error', 'Failed to record time in.', 'error');";
-                }
-            } elseif ($action === 'Time Out') {
-                $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
-            }
-        }
-    }
+    // Fetch all attendance records for all employees
+    $query = "SELECT * FROM attendance_log ORDER BY Date DESC";
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Login</title>
+    <title>Manager Attendance</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        #clock {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #dc3545;
-            margin-bottom: 15px;
-        }
-    </style>
 </head>
 <body>
-
-<header class="header text-center py-4">
-    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo mb-3" style="max-height: 100px;">
-    <h2 class="text-white">Attendance Tracker</h2>
+<header class="header p-3 bg-light">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo" height="60">
+    <a href="?action=logout" class="btn btn-danger float-right">Logout</a>
 </header>
 
-<main class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
-    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
-        <div id="clock" class="text-center"></div> <!-- Clock Display -->
-        <form method="POST">
-            <div class="form-group">
-                <label for="employee_id">Enter Employee ID</label>
-                <input type="text" class="form-control" name="employee_id" required>
-            </div>
-            <div class="d-flex justify-content-between">
-                <button type="submit" name="action" value="Time In" class="btn btn-success w-45">Time In</button>
-                <button type="submit" name="action" value="Time Out" class="btn btn-danger w-45">Time Out</button>
-            </div>
-        </form>
+<div class="container mt-4">
+    <h3>Attendance Records (All Employees)</h3>
 
-        <!-- Button to navigate to index.php -->
-        <button onclick="window.location.href='/Employee-Attendance-and-Status-Management-System/php/index.php'" class="btn btn-primary w-100 mt-3"> return </button>
-    </div>
-</main>
+    <?php if (empty($attendanceRecords)): ?>
+        <p>No attendance records found.</p>
+    <?php else: ?>
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>EmployeeID</th>
+                    <th>Date</th>
+                    <th>CheckIn</th>
+                    <th>CheckOut</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($attendanceRecords as $record): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($record['EmployeeID']) ?></td>
+                        <td><?= htmlspecialchars($record['Date']) ?></td>
+                        <td><?= htmlspecialchars($record['CheckIn']) ?></td>
+                        <td><?= $record['CheckOut'] ? htmlspecialchars($record['CheckOut']) : 'Still In' ?></td>
+                        <td><?= htmlspecialchars($record['Status']) ?></td>
+                        <td><?= htmlspecialchars($record['Remarks']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
 
-<footer class="footer text-center py-3 bg-dark text-white">
+    <a href="manager.php" class="btn btn-secondary mt-3">🔙 Back to Manager Hub</a>
+</div>
+
+<footer class="footer mt-5 text-center">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
-
-<?php if (!empty($swalScript)): ?>
-<script>
-    <?php echo $swalScript; ?>
-</script>
-<?php endif; ?>
-
-<script>
-    function updateClock() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-        document.getElementById('clock').textContent = timeString;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-</script>
-
 </body>
 </html>

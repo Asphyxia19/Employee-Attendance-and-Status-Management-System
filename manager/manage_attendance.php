@@ -1,3 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
 <?php
 session_start();
 require_once '../functions/db_connection.php';
@@ -14,31 +25,23 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
+    // Fetch all employees
     $employees = $procedures->getAllEmployees();
 
-    // ✅ Fetch all attendance records for all employees
+    // Fetch all attendance records for all employees
     $query = "SELECT * FROM attendance_log ORDER BY Date DESC";
-    $result = $db->query($query);
-    if (!$result) {
-        throw new Exception("Query error: " . $db->error);
-    }
-
-    $attendanceRecords = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt = $db->prepare($query);
+    $stmt->execute();
+    $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manager Attendance</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-<body>
-<header class="header p-3 bg-light">
-    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo" height="60">
-    <a href="?action=logout" class="btn btn-danger float-right">Logout</a>
+
+
+<header class="header">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
 </header>
 
 <div class="container mt-4">
