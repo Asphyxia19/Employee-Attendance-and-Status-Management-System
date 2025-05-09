@@ -14,6 +14,8 @@
 </header>
 
 <?php
+session_start(); // Ensure session is started
+
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
 
@@ -35,9 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result && $result->num_rows === 1) {
         $employee = $result->fetch_assoc();
 
-        // Compare the plain text password directly (assuming passwords are stored as plain text)
         if ($password === $employee['Password']) {
-            // Redirect to employee.php
+            $_SESSION['employee_id'] = $employee['EmployeeID']; // Store EmployeeID in session
             echo "
             <script>
                 Swal.fire({
@@ -49,7 +50,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 });
             </script>";
         } else {
-            // Invalid password
             echo "
             <script>
                 Swal.fire({
@@ -57,12 +57,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     text: 'Invalid Employee ID or password. Please try again.',
                     icon: 'error'
                 }).then(function() {
-                    window.location.href = 'employee_login.php';  // Redirect back to login page
+                    window.location.href = 'employee_login.php';
                 });
             </script>";
         }
     } else {
-        // Employee not found
         echo "
         <script>
             Swal.fire({
@@ -70,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 text: 'Invalid Employee ID or password. Please try again.',
                 icon: 'error'
             }).then(function() {
-                window.location.href = 'employee_login.php';  // Redirect back to login page
+                window.location.href = 'employee_login.php';
             });
         </script>";
     }

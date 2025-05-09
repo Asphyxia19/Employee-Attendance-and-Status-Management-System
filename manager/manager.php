@@ -9,13 +9,22 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
+<?php
+session_start(); // Start the session
+
+if (!isset($_SESSION['manager_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: manager_login.php");
+    exit;
+}
+?>
 <header class="header d-flex justify-content-between align-items-center p-3">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <a href="../php/index.php" class="btn-danger">Logout</a> <!-- Logout Button -->
+    <a href="manager_logout.php" class="btn btn-danger">Logout</a> <!-- Logout Button -->
 </header>
 
 <div class="container mt-5">
-    <h2 class="text-center">Welcome to ChooksToJarell Manager Hub!</h2>
+    <h2 class="text-center">Welcome  <?php echo htmlspecialchars($_SESSION['manager_name']); ?> to ChooksToJarell Manager Hub !</h2>
     <div class="row justify-content-center">
         <div class="col-md-6 text-center">
             <p>What do you want to do today?</p>

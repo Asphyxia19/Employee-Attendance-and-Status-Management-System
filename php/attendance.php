@@ -1,223 +1,127 @@
+<?php 
+require_once '../functions/db_connection.php';
+date_default_timezone_set('Asia/Manila');
+
+$swalScript = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $employee_id = $_POST['employee_id'];
+    $action = $_POST['action'];
+    $current_date = date('Y-m-d');
+    $current_time = date('H:i:s');
+
+    // Check if employee exists
+    $check_employee = $conn->prepare("SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?");
+    $check_employee->bind_param("i", $employee_id);
+    $check_employee->execute();
+    $check_result = $check_employee->get_result();
+
+    if ($check_result->num_rows === 0) {
+        $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
+    } else {
+        $check_attendance = $conn->prepare("SELECT * FROM attendance_log WHERE EmployeeID = ? AND Date = ?");
+        $check_attendance->bind_param("is", $employee_id, $current_date);
+        $check_attendance->execute();
+        $result = $check_attendance->get_result();
+
+        if ($result->num_rows > 0) {
+            $record = $result->fetch_assoc();
+
+            if ($action === 'Time In') {
+                $swalScript = "Swal.fire('Warning', 'You already timed in today.', 'warning');";
+            } elseif ($action === 'Time Out') {
+                if (!empty($record['CheckOut'])) {
+                    $swalScript = "Swal.fire('Info', 'You already timed out today.', 'info');";
+                } else {
+                    $update = $conn->prepare("UPDATE attendance_log SET CheckOut = ? WHERE EmployeeID = ? AND Date = ?");
+                    $update->bind_param("sis", $current_time, $employee_id, $current_date);
+                    if ($update->execute()) {
+                        $swalScript = "Swal.fire('Success', 'Time out recorded.', 'success').then(() => location.reload());";
+                    } else {
+                        $swalScript = "Swal.fire('Error', 'Failed to update time out.', 'error');";
+                    }
+                }
+            }
+        } else {
+            if ($action === 'Time In') {
+                $insert = $conn->prepare("INSERT INTO attendance_log (EmployeeID, Date, CheckIn, Status) VALUES (?, ?, ?, 'Present')");
+                $insert->bind_param("iss", $employee_id, $current_date, $current_time);
+                if ($insert->execute()) {
+                    $swalScript = "Swal.fire('Success', 'Time in recorded.', 'success').then(() => location.reload());";
+                } else {
+                    $swalScript = "Swal.fire('Error', 'Failed to record time in.', 'error');";
+                }
+            } elseif ($action === 'Time Out') {
+                $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
+            }
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        #clock {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-<header class="header">
-<img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+
+<header class="header text-center py-4">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo mb-3" style="max-height: 100px;">
+    <h2 class="text-white">Attendance Tracker</h2>
 </header>
-<?php 
-require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
 
-// Define the validateAttendance function
-function validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status) {
-    // Check if the employee exists
-    $query = "SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $employee_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 0) {
-        return "Employee ID does not exist.";
-    }
-
-    // Check if attendance date is valid
-    if (strtotime($attendance_date) === false) {
-        return "Invalid attendance date.";
-    }
-
-    // Check if check-in time is valid
-    if (strtotime($check_in) === false) {
-        return "Invalid check-in time.";
-    }
-
-    // Check if check-out time is valid (if provided)
-    if (!empty($check_out) && strtotime($check_out) === false) {
-        return "Invalid check-out time.";
-    }
-
-    // Check if check-out time is after check-in time
-    if (!empty($check_out) && strtotime($check_out) <= strtotime($check_in)) {
-        return "Check-out time must be after check-in time.";
-    }
-
-    // Check if status is valid
-    $valid_statuses = ["Present", "Absent"];
-    if (!in_array($status, $valid_statuses)) {
-        return "Invalid status. Allowed values are 'Present' or 'Absent'.";
-    }
-
-    // If all validations pass
-    return true;
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $employee_id = $_POST['employee_id'];
-    $attendance_date = $_POST['attendance_date'];
-    $check_in = $_POST['check_in'];
-    $check_out = $_POST['check_out'];
-    $status = $_POST['status'];
-    $remarks = $_POST['remarks'];
-
-    // Validate the input
-    $validation_result = validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status);
-    if ($validation_result !== true) {
-        echo "<script>
-            Swal.fire({
-                title: 'Error!',
-                text: '$validation_result',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        </script>";
-        exit;
-    }
-
-    // Proceed to record attendance
-    $stmt = $conn->prepare("CALL CrudEmployeeAttendance('CREATE', NULL, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isssss", $employee_id, $attendance_date, $check_in, $check_out, $status, $remarks);
-
-    if ($stmt->execute()) {
-        echo "<script>
-            Swal.fire({
-                title: 'Success!',
-                text: 'Attendance recorded successfully!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-        </script>";
-    } else {
-        echo "<script>
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to record attendance. Please try again.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        </script>";
-    }
-
-    $stmt->close();
-}
-?>
-
-
-
-<div class="container mt-5 text-center">
-    <h2 class="text-center">Attendance Dashboard</h2>
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h4>Mark Attendance</h4>
-            <form id="attendanceForm" method="POST">
-                <div class="form-group">
-                    <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" name="employee_id" required>
-                </div>
-                <div class="form-group">
-                    <label for="attendanceDate">Attendance Date</label>
-                    <input type="date" class="form-control" id="attendanceDate" name="attendance_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkIn">Check-In Time</label>
-                    <input type="time" class="form-control" id="checkIn" name="check_in" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkOut">Check-Out Time</label>
-                    <input type="time" class="form-control" id="checkOut" name="check_out">
-                </div>
-                <div class="form-group">
-                    <label for="attendanceStatus">Status</label>
-                    <select class="form-control" id="attendanceStatus" name="status" required>
-                        <option value="">Select Status</option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="remarks">Remarks</label>
-                    <input type="text" class="form-control" id="remarks" name="remarks">
-                </div>
-                
-                <button type="submit" class="btn btn-custom">Submit Attendance</button>
-            </form>
-            <div class="text-center mt-3">
-                <a href="index.php" class="btn btn-warning btn-lg">Back</a>
+<main class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
+        <div id="clock" class="text-center"></div> <!-- Clock Display -->
+        <form method="POST">
+            <div class="form-group">
+                <label for="employee_id">Enter Employee ID</label>
+                <input type="text" class="form-control" name="employee_id" required>
             </div>
-        </div>
-        
-    </div>
-</div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" name="action" value="Time In" class="btn btn-success w-45">Time In</button>
+                <button type="submit" name="action" value="Time Out" class="btn btn-danger w-45">Time Out</button>
+            </div>
+        </form>
 
-<footer class="footer">
+        <!-- Button to navigate to index.php -->
+        <button onclick="window.location.href='/Employee-Attendance-and-Status-Management-System/php/index.php'" class="btn btn-primary w-100 mt-3"> return </button>
+    </div>
+</main>
+
+<footer class="footer text-center py-3 bg-dark text-white">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
 
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
+<?php if (!empty($swalScript)): ?>
 <script>
-    $(document).ready(function() {
-        $('#attendanceForm').on('submit', function(e) {
-            e.preventDefault();
-            const employeeId = $('#employeeId').val();
-            const status = $('#attendanceStatus').val();
-            const date = new Date().toLocaleDateString();
-
-            // Add record to the table
-            $('#attendanceRecords').append(`
-                <tr>
-                    <td>${employeeId}</td>
-                    <td>${date}</td>
-                    <td>${status}</td>
-                </tr>
-            `);
-
-            // Show success alert
-            Swal.fire({
-                title: 'Success!',
-                text: 'Attendance recorded successfully!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-
-            // Reset form
-            $('#attendanceForm')[0].reset();
-        });
-
-        // Handle delete button click
-        $(document).on('click', '.delete-btn', function() {
-            const id = $(this).data('id');
-            if (confirm('Are you sure you want to delete this record?')) {
-                $.ajax({
-                    url: 'delete_attendance.php',
-                    type: 'POST',
-                    data: { id: id },
-                    success: function(response) {
-                        if (response === 'success') {
-                            alert('Record deleted successfully!');
-                            location.reload();
-                        } else {
-                            alert('Failed to delete record.');
-                        }
-                    }
-                });
-            }
-        });
-
-        // Handle edit button click
-        $(document).on('click', '.edit-btn', function() {
-            const id = $(this).data('id');
-            // Redirect to edit page with the record ID
-            window.location.href = `edit_attendance.php?id=${id}`;
-        });
-    });
+    <?php echo $swalScript; ?>
 </script>
+<?php endif; ?>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+        document.getElementById('clock').textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
 </body>
 </html>

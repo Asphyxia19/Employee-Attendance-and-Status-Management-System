@@ -22,11 +22,18 @@
                 </div>
                 <div class="card-body">
                     <?php
+                    session_start(); // Start the session
+
                     require_once '../functions/db_connection.php';
                     require_once '../functions/procedures.php';
 
-                    // Fetch employee details (replace with actual employee ID from session or login)
-                    $employeeID = 1; // Example EmployeeID
+                    if (!isset($_SESSION['employee_id'])) {
+                        // Redirect to login page if not logged in
+                        header("Location: employee_login.php");
+                        exit;
+                    }
+
+                    $employeeID = $_SESSION['employee_id']; // Get the logged-in EmployeeID
                     $database = new Database();
                     $db = $database->getConnection();
                     $procedures = new Procedures($db);

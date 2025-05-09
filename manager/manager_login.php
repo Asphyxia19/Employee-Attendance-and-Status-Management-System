@@ -10,6 +10,8 @@
 </head>
 <body>
 <?php
+session_start(); // Start the session
+
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
 
@@ -25,6 +27,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $managerDetails = $procedures->loginManagerByID($managerID, $password);
 
     if ($managerDetails) {
+        // Set session variables
+        $_SESSION['manager_id'] = $managerDetails['ManagerID'];
+        $_SESSION['manager_name'] = $managerDetails['FirstName'] . ' ' . $managerDetails['LastName'];
+
         // Redirect with SweetAlert on successful login
         echo "
         <script>
