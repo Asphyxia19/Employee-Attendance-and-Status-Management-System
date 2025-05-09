@@ -1,7 +1,7 @@
 <?php
 class Database {
     private $host = "localhost"; // Database host
-    private $db_name = "attendancemanagement"; // Database name
+    private $db_name = "attendance_management"; // Database name
     private $username = "root"; // Database username
     private $password = ""; // Database password
     public $conn;
