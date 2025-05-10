@@ -34,50 +34,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
         $stmt->closeCursor();
 
-        if ($employee['Password'] !== $password) {
-            $swalScript = "Swal.fire('Error', 'Incorrect password.', 'error');";
-        } else {
+        if ($employee) {
+            $storedPassword = $employee['Password'];
 
-            // 3. GET TODAY'S ATTENDANCE
-            $stmt = $conn->prepare("CALL GetTodayAttendance(:employee_id, :current_date)");
-            $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
-            $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
-            $stmt->execute();
-            $record = $stmt->fetch(PDO::FETCH_ASSOC);
-            $stmt->closeCursor();
+            // Verify the password
+            if (password_verify($password, $storedPassword)) {
+                // Password matches (hashed)
+                // Proceed with attendance logic
+            } elseif ($password === $storedPassword) {
+                // Password matches (plain-text)
+                // Rehash the plain-text password and update the database
+                $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $updateStmt = $conn->prepare("CALL UpdateEmployeePassword(:employee_id, :password)");
+                $updateStmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+                $updateStmt->bindValue(':password', $newHashedPassword, PDO::PARAM_STR);
+                $updateStmt->execute();
+                $updateStmt->closeCursor();
 
-            if ($record) {
-                if ($action === 'Time In') {
-                    $swalScript = "Swal.fire('Warning', 'Already timed in at {$record['CheckIn']}.', 'warning');";
-                } elseif ($action === 'Time Out') {
-                    if (!empty($record['CheckOut'])) {
-                        $swalScript = "Swal.fire('Info', 'Already timed out at {$record['CheckOut']}.', 'info');";
-                    } else {
-                        $stmt = $conn->prepare("CALL UpdateTimeOut(:employee_id, :current_date, :current_time)");
-                        $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
-                        $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
-                        $stmt->bindValue(':current_time', $current_time, PDO::PARAM_STR);
-                        $success = $stmt->execute();
-                        $swalScript = $success
-                            ? "Swal.fire('Success', 'Time out recorded at $current_time.', 'success').then(() => location.reload());"
-                            : "Swal.fire('Error', 'Failed to record time out.', 'error');";
-                        $stmt->closeCursor();
-                    }
-                }
+                // Proceed with attendance logic
             } else {
-                if ($action === 'Time In') {
-                    $stmt = $conn->prepare("CALL InsertTimeIn(:employee_id, :current_date, :current_time)");
+                // Password does not match
+                $swalScript = "Swal.fire('Error', 'Incorrect password.', 'error');";
+            }
+        } else {
+            // Employee not found
+            $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
+        }
+
+        // 3. GET TODAY'S ATTENDANCE
+        $stmt = $conn->prepare("CALL GetTodayAttendance(:employee_id, :current_date)");
+        $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+        $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
+        $stmt->execute();
+        $record = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+
+        if ($record) {
+            if ($action === 'Time In') {
+                $swalScript = "Swal.fire('Warning', 'Already timed in at {$record['CheckIn']}.', 'warning');";
+            } elseif ($action === 'Time Out') {
+                if (!empty($record['CheckOut'])) {
+                    $swalScript = "Swal.fire('Info', 'Already timed out at {$record['CheckOut']}.', 'info');";
+                } else {
+                    $stmt = $conn->prepare("CALL UpdateTimeOut(:employee_id, :current_date, :current_time)");
                     $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
                     $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
                     $stmt->bindValue(':current_time', $current_time, PDO::PARAM_STR);
                     $success = $stmt->execute();
                     $swalScript = $success
-                        ? "Swal.fire('Success', 'Time in recorded at $current_time.', 'success').then(() => location.reload());"
-                        : "Swal.fire('Error', 'Failed to record time in.', 'error');";
+                        ? "Swal.fire('Success', 'Time out recorded at $current_time.', 'success').then(() => location.reload());"
+                        : "Swal.fire('Error', 'Failed to record time out.', 'error');";
                     $stmt->closeCursor();
-                } elseif ($action === 'Time Out') {
-                    $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
                 }
+            }
+        } else {
+            if ($action === 'Time In') {
+                $stmt = $conn->prepare("CALL InsertTimeIn(:employee_id, :current_date, :current_time)");
+                $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+                $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
+                $stmt->bindValue(':current_time', $current_time, PDO::PARAM_STR);
+                $success = $stmt->execute();
+                $swalScript = $success
+                    ? "Swal.fire('Success', 'Time in recorded at $current_time.', 'success').then(() => location.reload());"
+                    : "Swal.fire('Error', 'Failed to record time in.', 'error');";
+                $stmt->closeCursor();
+            } elseif ($action === 'Time Out') {
+                $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
             }
         }
     }

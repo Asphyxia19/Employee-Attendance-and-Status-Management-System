@@ -14,34 +14,31 @@
 </header>
 <?php
 session_start(); // Start the session
+
 require_once '../functions/db_connection.php';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
 
-    if (!$db) {
-        die("Database connection failed.");
-    }
-
-    $managerID = htmlspecialchars(trim($_POST['EmployeeID']));
+    $employeeID = htmlspecialchars(trim($_POST['EmployeeID']));
     $password = htmlspecialchars(trim($_POST['password']));
 
     try {
-        // Check if the manager exists and fetch their details
-        $query = "SELECT EmployeeID, FirstName, LastName, Password FROM employee_info WHERE EmployeeID = :employee_id";
+        // Check if the employee exists
+        $query = "SELECT EmployeeID, Password FROM employee_info WHERE EmployeeID = :employee_id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':employee_id', $employeeID, PDO::PARAM_INT);
         $stmt->execute();
-        $manager = $stmt->fetch(PDO::FETCH_ASSOC);
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($manager) {
-            $storedPassword = $manager['Password'];
+        if ($employee) {
+            $storedPassword = $employee['Password'];
 
-            // Check if the password is hashed
+            // Verify the password
             if (password_verify($password, $storedPassword)) {
                 // Password matches (hashed)
-                $_SESSION['employee_id'] = $manager['EmployeeID'];
-                $_SESSION['employee_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+                $_SESSION['employee_id'] = $employee['EmployeeID'];
 
                 echo "
                 <script>
@@ -50,13 +47,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         text: 'Login Successful',
                         icon: 'success'
                     }).then(function() {
-                        window.location.href = 'employee.php';  // Redirect to dashboard
+                        window.location.href = 'employee.php';  // Redirect to employee dashboard
                     });
                 </script>";
             } elseif ($password === $storedPassword) {
-                // Password matches (plain text)
-                $_SESSION['employee_id'] = $manager['EmployeeID'];
-                $_SESSION['employee_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+                // Password matches (plain-text)
+                $_SESSION['employee_id'] = $employee['EmployeeID'];
+
+                // Rehash the plain-text password and update the database
+                $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $updateQuery = "UPDATE employee_info SET Password = :password WHERE EmployeeID = :employee_id";
+                $updateStmt = $db->prepare($updateQuery);
+                $updateStmt->bindParam(':password', $newHashedPassword);
+                $updateStmt->bindParam(':employee_id', $employeeID);
+                $updateStmt->execute();
 
                 echo "
                 <script>
@@ -65,7 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         text: 'Login Successful',
                         icon: 'success'
                     }).then(function() {
-                        window.location.href = 'employee.php';  // Redirect to dashboard
+                        window.location.href = 'employee.php';  // Redirect to employee dashboard
                     });
                 </script>";
             } else {
@@ -74,15 +78,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <script>
                     Swal.fire({
                         title: 'Oops!',
-                        text: 'Invalid password. Please try again.',
+                        text: 'Invalid Employee ID or password. Please try again.',
                         icon: 'error'
                     }).then(function() {
-                        window.location.href = 'employee_login.php';  // Redirect back to login page
+                        window.location.href = 'employee_login.php';
                     });
                 </script>";
             }
         } else {
-            // Manager not found
+            // Employee not found
             echo "
             <script>
                 Swal.fire({
@@ -90,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     text: 'Employee ID not found. Please try again.',
                     icon: 'error'
                 }).then(function() {
-                    window.location.href = 'employee_login.php';  // Redirect back to login page
+                    window.location.href = 'employee_login.php';
                 });
             </script>";
         }

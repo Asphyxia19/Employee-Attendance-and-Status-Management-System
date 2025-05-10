@@ -45,12 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['manager_id'])) {
     $password = !empty($_POST['password']) ? password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT) : null;
     $profilePicture = null;
 
+    // Fetch the current manager details to retain existing values
+    $currentManager = $procedures->getManagerByID($originalManagerID);
+
+    if (!$currentManager) {
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Manager not found.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = 'manager_hub.php';
+            });
+        </script>";
+        exit;
+    }
+
     // Handle profile picture upload
     if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = '../photos/';
         $uploadFile = $uploadDir . basename($_FILES['profile_picture']['name']);
         if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadFile)) {
-            $profilePicture = $uploadFile; // Save the file path
+            $profilePicture = $uploadFile; // Save the new file path
         } else {
             echo "
             <script>
@@ -65,6 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['manager_id'])) {
             </script>";
             exit;
         }
+    } else {
+        // Retain the existing profile picture if no new one is uploaded
+        $profilePicture = $currentManager['ProfilePicture'];
     }
 
     try {
