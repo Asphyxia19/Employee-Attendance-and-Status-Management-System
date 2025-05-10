@@ -2,62 +2,91 @@
 require_once '../functions/db_connection.php';
 date_default_timezone_set('Asia/Manila');
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $swalScript = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $employee_id = $_POST['employee_id'];
+    $employee_id = intval($_POST['employee_id']);
+    $password = $_POST['password'];
     $action = $_POST['action'];
     $current_date = date('Y-m-d');
     $current_time = date('H:i:s');
 
-    // Check if employee exists
-    $check_employee = $conn->prepare("SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?");
-    $check_employee->bind_param("i", $employee_id);
-    $check_employee->execute();
-    $check_result = $check_employee->get_result();
+    // 1. CHECK IF EMPLOYEE EXISTS
+    $stmt = $conn->prepare("CALL CheckEmployeeExists(?)");
+    $stmt->bind_param("i", $employee_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    if ($check_result->num_rows === 0) {
+    if ($result->num_rows === 0) {
         $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
+        $stmt->close();
+        $conn->next_result();
     } else {
-        $check_attendance = $conn->prepare("SELECT * FROM attendance_log WHERE EmployeeID = ? AND Date = ?");
-        $check_attendance->bind_param("is", $employee_id, $current_date);
-        $check_attendance->execute();
-        $result = $check_attendance->get_result();
+        $stmt->close();
+        $conn->next_result();
 
-        if ($result->num_rows > 0) {
+        // 2. VERIFY PASSWORD
+        $stmt = $conn->prepare("CALL GetEmployeePassword(?)");
+        $stmt->bind_param("i", $employee_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $employee = $result->fetch_assoc();
+        $stmt->close();
+        $conn->next_result();
+
+        if ($employee['Password'] !== $password) {
+            $swalScript = "Swal.fire('Error', 'Incorrect password.', 'error');";
+        } else {
+
+        // 3. GET TODAY'S ATTENDANCE
+            $stmt = $conn->prepare("CALL GetTodayAttendance(?, ?)");
+            $stmt->bind_param("is", $employee_id, $current_date);
+            $stmt->execute();
+            $result = $stmt->get_result();
             $record = $result->fetch_assoc();
+            $stmt->close();
+            $conn->next_result();
 
-            if ($action === 'Time In') {
-                $swalScript = "Swal.fire('Warning', 'You already timed in today.', 'warning');";
-            } elseif ($action === 'Time Out') {
-                if (!empty($record['CheckOut'])) {
-                    $swalScript = "Swal.fire('Info', 'You already timed out today.', 'info');";
-                } else {
-                    $update = $conn->prepare("UPDATE attendance_log SET CheckOut = ? WHERE EmployeeID = ? AND Date = ?");
-                    $update->bind_param("sis", $current_time, $employee_id, $current_date);
-                    if ($update->execute()) {
-                        $swalScript = "Swal.fire('Success', 'Time out recorded.', 'success').then(() => location.reload());";
+            if ($record) {
+                if ($action === 'Time In') {
+                    $swalScript = "Swal.fire('Warning', 'Already timed in at {$record['CheckIn']}.', 'warning');";
+                } elseif ($action === 'Time Out') {
+                    if (!empty($record['CheckOut'])) {
+                        $swalScript = "Swal.fire('Info', 'Already timed out at {$record['CheckOut']}.', 'info');";
                     } else {
-                        $swalScript = "Swal.fire('Error', 'Failed to update time out.', 'error');";
+                        $stmt = $conn->prepare("CALL UpdateTimeOut(?, ?, ?)");
+                        $stmt->bind_param("iss", $employee_id, $current_date, $current_time);
+                        $success = $stmt->execute();
+                        $swalScript = $success
+                            ? "Swal.fire('Success', 'Time out recorded at $current_time.', 'success').then(() => location.reload());"
+                            : "Swal.fire('Error', 'Failed to record time out.', 'error');";
+                        $stmt->close();
+                        $conn->next_result();
                     }
                 }
-            }
-        } else {
-            if ($action === 'Time In') {
-                $insert = $conn->prepare("INSERT INTO attendance_log (EmployeeID, Date, CheckIn, Status) VALUES (?, ?, ?, 'Present')");
-                $insert->bind_param("iss", $employee_id, $current_date, $current_time);
-                if ($insert->execute()) {
-                    $swalScript = "Swal.fire('Success', 'Time in recorded.', 'success').then(() => location.reload());";
-                } else {
-                    $swalScript = "Swal.fire('Error', 'Failed to record time in.', 'error');";
+            } else {
+                if ($action === 'Time In') {
+                    $stmt = $conn->prepare("CALL InsertTimeIn(?, ?, ?)");
+                    $stmt->bind_param("iss", $employee_id, $current_date, $current_time);
+                    $success = $stmt->execute();
+                    $swalScript = $success
+                        ? "Swal.fire('Success', 'Time in recorded at $current_time.', 'success').then(() => location.reload());"
+                        : "Swal.fire('Error', 'Failed to record time in.', 'error');";
+                    $stmt->close();
+                    $conn->next_result();
+                } elseif ($action === 'Time Out') {
+                    $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
                 }
-            } elseif ($action === 'Time Out') {
-                $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
             }
         }
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -88,16 +117,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
         <div id="clock" class="text-center"></div> <!-- Clock Display -->
         <form method="POST">
-            <div class="form-group">
-                <label for="employee_id">Enter Employee ID</label>
-                <input type="text" class="form-control" name="employee_id" required>
-            </div>
-            <div class="d-flex justify-content-between">
-                <button type="submit" name="action" value="Time In" class="btn btn-success w-45">Time In</button>
-                <button type="submit" name="action" value="Time Out" class="btn btn-danger w-45">Time Out</button>
-            </div>
-        </form>
-
+    <div class="form-group">
+        <label for="employee_id">Enter Employee ID</label>
+        <input type="text" class="form-control" name="employee_id" required>
+    </div>
+    <div class="form-group">
+        <label for="password">Enter Password</label>
+        <input type="password" class="form-control" name="password" required>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button type="submit" name="action" value="Time In" class="btn btn-success w-45">Time In</button>
+        <button type="submit" name="action" value="Time Out" class="btn btn-danger w-45">Time Out</button>
+    </div>
+</form>
         <!-- Button to navigate to index.php -->
         <button onclick="window.location.href='/Employee-Attendance-and-Status-Management-System/php/index.php'" class="btn btn-primary w-100 mt-3"> return </button>
     </div>
