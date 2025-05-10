@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
     <div class="form-group">
         <label for="employee_id">Enter Employee ID</label>
-        <input type="text" class="form-control" name="employee_id" required>
+        <input type="text" class="form-control" maxlength= "7" name="employee_id" required>
     </div>
     <div class="form-group">
         <label for="password">Enter Password</label>
