@@ -186,6 +186,14 @@ class Procedures {
         $this->callProcedure('CreateManagerWithProfilePicture', [$profilePicture, $firstName, $lastName, $email, $password]);
     }
 
-    
+    public function searchEmployees($searchTerm) {
+        $stmt = $this->callProcedure('SearchEmployees', [$searchTerm]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function searchManagers($searchTerm) {
+        $stmt = $this->callProcedure('SearchManagers', [$searchTerm]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>
