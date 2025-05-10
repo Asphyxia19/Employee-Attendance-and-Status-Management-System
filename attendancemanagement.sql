@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 10, 2025 at 05:57 AM
+-- Generation Time: May 10, 2025 at 04:35 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -192,7 +192,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAttendanceLogs` ()   BEGIN
         employee_info.ProfilePicture
     FROM attendance_log
     INNER JOIN employee_info ON attendance_log.EmployeeID = employee_info.EmployeeID
-    ORDER BY attendance_log.Date DESC;
+    ORDER BY attendance_log.Date DESC, 
+             attendance_log.CheckOut DESC, 
+             attendance_log.CheckIn DESC;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetEmployeeByID` (IN `p_EmployeeID` INT)   BEGIN
@@ -272,6 +274,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertAttendanceLog` (IN `p_Employe
     );
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertRequest` (IN `p_employee_id` INT, IN `p_request_type` ENUM('Change Shift','Sick Leave','Vacation Leave'), IN `p_details` TEXT)   BEGIN
+    INSERT INTO requests (EmployeeID, RequestType, Details, CreatedAt)
+    VALUES (p_employee_id, p_request_type, p_details, NOW());
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertTimeIn` (IN `emp_id` INT, IN `log_date` DATE, IN `time_in` TIME)   BEGIN
     INSERT INTO attendance_log (EmployeeID, Date, CheckIn, Status)
     VALUES (emp_id, log_date, time_in, 'Present');
@@ -287,6 +294,42 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `LoginManagerByID` (IN `p_ManagerID`
         manager_info
     WHERE 
         ManagerID = p_ManagerID AND Password = p_Password;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SearchEmployees` (IN `search_term` VARCHAR(255))   BEGIN
+    SELECT 
+        EmployeeID,
+        ProfilePicture,
+        FirstName,
+        LastName,
+        ContactNumber,
+        Email,
+        Address,
+        Position,
+        HireDate
+    FROM 
+        employee_info
+    WHERE 
+        FirstName LIKE CONCAT('%', search_term, '%') OR
+        LastName LIKE CONCAT('%', search_term, '%') OR
+        Email LIKE CONCAT('%', search_term, '%') OR
+        EmployeeID LIKE CONCAT('%', search_term, '%');
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SearchManagers` (IN `search_term` VARCHAR(255))   BEGIN
+    SELECT 
+        ManagerID,
+        ProfilePicture,
+        FirstName,
+        LastName,
+        Email
+    FROM 
+        manager_info
+    WHERE 
+        FirstName LIKE CONCAT('%', search_term, '%') OR
+        LastName LIKE CONCAT('%', search_term, '%') OR
+        Email LIKE CONCAT('%', search_term, '%') OR
+        ManagerID LIKE CONCAT('%', search_term, '%');
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateEmployee` (IN `p_EmployeeID` INT, IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_ContactNumber` VARCHAR(20), IN `p_Email` VARCHAR(255), IN `p_Address` TEXT, IN `p_Position` VARCHAR(100), IN `p_HireDate` DATE)   BEGIN
@@ -406,7 +449,8 @@ INSERT INTO `attendance_log` (`EmployeeID`, `Date`, `CheckIn`, `CheckOut`, `Stat
 (10009, '2025-05-10', '01:00:21', '01:00:29', 'Present'),
 (10002, '2025-05-10', '01:06:50', '01:49:46', 'Present'),
 (10006, '2025-05-10', '01:33:49', '01:52:41', 'Present'),
-(10005, '2025-05-10', '10:03:39', '11:35:32', 'Present');
+(10005, '2025-05-10', '10:03:39', '11:35:32', 'Present'),
+(10004, '2025-05-10', '14:23:08', '14:25:08', 'Present');
 
 -- --------------------------------------------------------
 
@@ -425,14 +469,14 @@ CREATE TABLE `employee_info` (
   `Position` varchar(100) DEFAULT NULL,
   `HireDate` date DEFAULT NULL,
   `Password` varchar(5) NOT NULL,
-  `HourlyRate` decimal(10,2) DEFAULT NULL
+  `shifts` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `employee_info`
 --
 
-INSERT INTO `employee_info` (`EmployeeID`, `ProfilePicture`, `FirstName`, `LastName`, `ContactNumber`, `Email`, `Address`, `Position`, `HireDate`, `Password`, `HourlyRate`) VALUES
+INSERT INTO `employee_info` (`EmployeeID`, `ProfilePicture`, `FirstName`, `LastName`, `ContactNumber`, `Email`, `Address`, `Position`, `HireDate`, `Password`, `shifts`) VALUES
 (10002, '../photos/del rosario sean.webp', 'Sean Martin', 'Del Rosario', '09065816503', 'seanmdelrosario@gmail.com', 'Lipa City Batangas', 'Cook', '2023-11-15', '$2y$1', NULL),
 (10004, '../photos/talas abby.webp', 'Abby', 'Talas', '09201234567', 'ana.lopez@example.com', '321 Rizal Blvd., Pasig City', 'Cashier', '2021-09-30', '45678', NULL),
 (10005, '../photos/paulite jarell.webp', 'Jarell', 'Paulite', '09211234567', 'carlos.torres@example.com', '654 Katipunan Ave., Manila', 'Burger', '2020-01-20', '56789', NULL),
@@ -467,19 +511,70 @@ INSERT INTO `manager_info` (`ManagerID`, `ProfilePicture`, `FirstName`, `LastNam
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `positions`
+--
+
+CREATE TABLE `positions` (
+  `role_id` int(11) NOT NULL,
+  `role_name` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `positions`
+--
+
+INSERT INTO `positions` (`role_id`, `role_name`) VALUES
+(1, 'Cashier'),
+(2, 'Cook'),
+(3, 'Dishwasher'),
+(4, 'Janitor'),
+(5, 'Server');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `requests`
 --
 
 CREATE TABLE `requests` (
   `RequestID` int(11) NOT NULL,
-  `EmployeeID` int(11) DEFAULT NULL,
-  `RequestType` varchar(100) DEFAULT NULL,
-  `Reason` text DEFAULT NULL,
-  `DateRequested` date DEFAULT NULL,
-  `Status` varchar(50) DEFAULT NULL,
-  `ManagerID` int(11) DEFAULT NULL,
-  `employee_id` int(11) DEFAULT NULL
+  `EmployeeID` int(11) NOT NULL,
+  `RequestType` enum('Change Shift','Sick Leave','Vacation Leave') NOT NULL,
+  `Details` text DEFAULT NULL,
+  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `requests`
+--
+
+INSERT INTO `requests` (`RequestID`, `EmployeeID`, `RequestType`, `Details`, `CreatedAt`) VALUES
+(1, 10002, 'Change Shift', '{\"current_shift\":\"Day Shift (8AM-5PM)\",\"requested_shift\":\"Night Shift (10PM-7AM)\",\"shift_change_date\":\"2025-05-15\"}', '2025-05-10 14:25:52'),
+(2, 10002, 'Sick Leave', '{\"reason\":\"I am sick Coff Coff\"}', '2025-05-10 14:26:02'),
+(3, 10006, 'Sick Leave', '{\"reason\":\"I am sickkk COFF COFFF\"}', '2025-05-10 14:27:44'),
+(4, 10005, 'Vacation Leave', '{\"reason\":\"Gusto ko na mag dagat\"}', '2025-05-10 14:28:44');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `shifts`
+--
+
+CREATE TABLE `shifts` (
+  `shift_id` int(11) NOT NULL,
+  `shift_name` varchar(50) NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `shifts`
+--
+
+INSERT INTO `shifts` (`shift_id`, `shift_name`, `start_time`, `end_time`) VALUES
+(1, 'Day Duty', '08:00:00', '17:00:00'),
+(2, 'Night Duty', '18:00:00', '00:00:00'),
+(3, 'Graveyard Shift', '01:00:00', '08:00:00');
 
 --
 -- Indexes for dumped tables
@@ -504,12 +599,23 @@ ALTER TABLE `manager_info`
   ADD PRIMARY KEY (`ManagerID`);
 
 --
+-- Indexes for table `positions`
+--
+ALTER TABLE `positions`
+  ADD PRIMARY KEY (`role_id`);
+
+--
 -- Indexes for table `requests`
 --
 ALTER TABLE `requests`
   ADD PRIMARY KEY (`RequestID`),
-  ADD KEY `EmployeeID` (`EmployeeID`),
-  ADD KEY `ManagerID` (`ManagerID`);
+  ADD KEY `EmployeeID` (`EmployeeID`);
+
+--
+-- Indexes for table `shifts`
+--
+ALTER TABLE `shifts`
+  ADD PRIMARY KEY (`shift_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -525,13 +631,25 @@ ALTER TABLE `employee_info`
 -- AUTO_INCREMENT for table `manager_info`
 --
 ALTER TABLE `manager_info`
-  MODIFY `ManagerID` int(7) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2917715;
+  MODIFY `ManagerID` int(7) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2917716;
+
+--
+-- AUTO_INCREMENT for table `positions`
+--
+ALTER TABLE `positions`
+  MODIFY `role_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `requests`
 --
 ALTER TABLE `requests`
-  MODIFY `RequestID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `RequestID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `shifts`
+--
+ALTER TABLE `shifts`
+  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Constraints for dumped tables
@@ -547,8 +665,7 @@ ALTER TABLE `attendance_log`
 -- Constraints for table `requests`
 --
 ALTER TABLE `requests`
-  ADD CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`EmployeeID`) REFERENCES `employee_info` (`EmployeeID`),
-  ADD CONSTRAINT `requests_ibfk_2` FOREIGN KEY (`ManagerID`) REFERENCES `manager_info` (`ManagerID`);
+  ADD CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`EmployeeID`) REFERENCES `employee_info` (`EmployeeID`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

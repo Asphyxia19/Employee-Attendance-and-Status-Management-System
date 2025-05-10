@@ -20,7 +20,7 @@
                 <div class="card-header text-center">
                     <h3>👤 Employee Information</h3>
                 </div>
-                <div class="card-body">
+                <div class="card-body text-center">
                     <?php
                     session_start(); // Start the session
 
@@ -41,8 +41,13 @@
                     try {
                         $employee = $procedures->getEmployeeByID($employeeID);
                         if ($employee) {
+                            // Display profile picture
+                            $profilePicture = !empty($employee['ProfilePicture']) ? $employee['ProfilePicture'] : '../photos/default_profile.png';
+                            echo "<img src='" . htmlspecialchars($profilePicture) . "' alt='Profile Picture' class='img-thumbnail mb-3' style='width: 150px; height: 150px;'>";
+
+                            // Display other employee details
                             echo "<p><strong>Full Name:</strong> " . htmlspecialchars($employee['FirstName'] . " " . $employee['LastName']) . "</p>";
-                            echo "<p><strong>Position:</strong> " . htmlspecialchars($employee['Position']) . "</p>";
+                            echo "<p><strong>Position:</strong> " . htmlspecialchars($employee['Position']) . "</p>"; // Use 'Position' instead of 'role_id'
                             echo "<p><strong>Contact Number:</strong> " . htmlspecialchars($employee['ContactNumber']) . "</p>";
                             echo "<p><strong>Email:</strong> " . htmlspecialchars($employee['Email']) . "</p>";
                             echo "<p><strong>Address:</strong> " . htmlspecialchars($employee['Address']) . "</p>";
@@ -56,8 +61,6 @@
                     ?>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="edit_personal_info.php" class="btn btn-warning">📝 Request to Edit Information</a>
-                    <a href="delete_account.php" class="btn btn-danger">❌ Request to Delete Account</a>
                     <a href="employee_login.php" class="btn btn-secondary">🔚 Logout</a>
                 </div>
             </div>

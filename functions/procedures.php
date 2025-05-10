@@ -30,17 +30,17 @@ class Procedures {
     }
 
     public function getAllEmployees() {
-        $stmt = $this->callProcedure('GetAllEmployees');
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $stmt = $this->callProcedure('GetAllEmployees');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
     public function getEmployeeByID($employeeID) {
-        $stmt = $this->callProcedure('GetEmployeeByID', [$employeeID]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+    $stmt = $this->callProcedure('GetEmployeeByID', [$employeeID]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
-    public function updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate) {
-        $this->callProcedure('UpdateEmployee', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate]);
+    public function updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate) {
+        $this->callProcedure('UpdateEmployee', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate]);
     }
 
     public function deleteEmployee($employeeID) {
@@ -48,7 +48,7 @@ class Procedures {
     }
 
     public function getAttendanceLogs() {
-        $stmt = $this->callProcedure('GetAttendanceLogs', []); // No need to pass the PDO object
+        $stmt = $this->callProcedure('GetAttendanceLogs', []);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -57,8 +57,8 @@ class Procedures {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
-        $this->callProcedure('CreateEmployee', [$firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
+    public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password) {
+        $this->callProcedure('CreateEmployee', [$firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password]);
     }
 
     public function insertAttendanceLog($employeeID, $date, $checkIn, $checkOut, $status, $remarks) {
@@ -71,7 +71,7 @@ class Procedures {
     }
 
     public function deleteManager($managerID) {
-    $this->callProcedure('DeleteManager', [$managerID]);
+        $this->callProcedure('DeleteManager', [$managerID]);
     }
 
     public function createManager($managerID, $firstName, $lastName, $contactNumber, $email, $password, $profilePicture) {
@@ -160,12 +160,12 @@ class Procedures {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function updateEmployeeWithPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
-        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
+    public function updateEmployeeWithPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password) {
+        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password]);
     }
 
-    public function updateEmployeeWithoutPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, ) {
-        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate,]);
+    public function updateEmployeeWithoutPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate) {
+        $this->callProcedure('UpdateEmployeeWithoutPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate]);
     }
 
     public function updateManagerWithPassword($originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $password) {
@@ -176,9 +176,9 @@ class Procedures {
         $this->callProcedure('UpdateManagerWithoutPassword', [$originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email]);
     }
 
-    public function createEmployeeWithProfilePicture($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
+    public function createEmployeeWithProfilePicture($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password) {
         $this->callProcedure('CreateEmployeeWithProfilePicture', [
-            $employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password
+            $employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $role_id, $shift_id, $hireDate, $password
         ]);
     }
 
@@ -195,5 +195,29 @@ class Procedures {
         $stmt = $this->callProcedure('SearchManagers', [$searchTerm]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function insertRequest($employeeId, $requestType, $details) {
+    try {
+        $stmt = $this->conn->prepare("CALL InsertRequest(:employee_id, :request_type, :details)");
+        $stmt->bindParam(':employee_id', $employeeId, PDO::PARAM_INT);
+        $stmt->bindParam(':request_type', $requestType, PDO::PARAM_STR);
+        $stmt->bindParam(':details', $details, PDO::PARAM_STR);
+        $stmt->execute();
+        return true; // Return true if the procedure executes successfully
+    } catch (PDOException $e) {
+        throw new Exception("Error calling InsertRequest procedure: " . $e->getMessage());
+    }
+
+    
+    }
+    public function getAllShifts() {
+        $stmt = $this->callProcedure('GetAllShifts');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function getAllPositions() {
+        $stmt = $this->callProcedure('GetAllPositions');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
 ?>

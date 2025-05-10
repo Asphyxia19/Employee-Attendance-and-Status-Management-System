@@ -34,8 +34,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($employee && password_verify($password, $employee['Password'])) {
-            // Password matches, set session variables
+            // Password matches (hashed)
             $_SESSION['employee_id'] = $employee['EmployeeID'];
+
+            echo "
+            <script>
+                Swal.fire({
+                    title: 'Welcome!',
+                    text: 'Login Successful',
+                    icon: 'success'
+                }).then(function() {
+                    window.location.href = 'employee.php';  // Redirect to employee dashboard
+                });
+            </script>";
+        } elseif ($employee && $password === $employee['Password']) {
+            // Password matches (plain text)
+            $_SESSION['employee_id'] = $employee['EmployeeID'];
+            // Optionally rehash the password
+            $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $updateQuery = "UPDATE employee_info SET Password = :password WHERE EmployeeID = :employee_id";
+            $updateStmt = $db->prepare($updateQuery);
+            $updateStmt->bindParam(':password', $newHashedPassword);
+            $updateStmt->bindParam(':employee_id', $employeeID);
+            $updateStmt->execute();
 
             echo "
             <script>
@@ -82,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST" action="employee_login.php">
                 <div class="form-group">
                     <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" name="employee_id" placeholder="Enter your Employee ID" required>
+                    <input type="text" class="form-control" id="employeeId" maxlength= "5" ="employee_id" placeholder="Enter your Employee ID" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>

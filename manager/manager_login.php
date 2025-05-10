@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST" action="manager_login.php">
                 <div class="form-group">
                     <label for="ManagerID">Manager ID</label>
-                    <input type="text" class="form-control" id="ManagerID" name="ManagerID" required>
+                    <input type="text" class="form-control" id="ManagerID" maxlength="7" name="ManagerID" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>

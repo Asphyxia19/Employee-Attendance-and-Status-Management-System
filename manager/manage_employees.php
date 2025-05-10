@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $position = htmlspecialchars(trim($_POST['position']));
             $hireDate = htmlspecialchars(trim($_POST['hire_date']));
 
-            $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+            $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $shift_id, $role_id);
             echo "<script>
                 Swal.fire({
                     title: 'Success!',
@@ -94,6 +94,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </script>";
     }
 }
+
+if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $fileType = mime_content_type($_FILES['profile_picture']['tmp_name']);
+
+    if (!in_array($fileType, $allowedTypes)) {
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Invalid file type. Please upload a valid image (JPEG, PNG, GIF, or WEBP).',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
+        exit;
+    }
+
+    $uploadDir = '../photos/';
+    $uploadFile = $uploadDir . basename($_FILES['profile_picture']['name']);
+
+    if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadFile)) {
+        $profilePicture = $uploadFile; // Save the file path
+    } else {
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to upload profile picture. Please try again.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
+        exit;
+    }
+} else {
+    // Retain the original profile picture if no new picture is uploaded
+    $profilePicture = isset($employee['ProfilePicture']) ? $employee['ProfilePicture'] : '../photos/default-profile.png';
+}
 ?>
 
 <header class="header">
@@ -125,39 +164,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Position</th>
+                <th>Shift</th>
                 <th>Contact</th>
                 <th>Email</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            <?php if (!empty($employees)): ?>
-                <?php foreach ($employees as $employee): ?>
-                    <tr>
-                        <td class ="text-center align-middle">
-                            <img src="<?php echo !empty($employee['ProfilePicture']) ? htmlspecialchars($employee['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
-                                 alt="Profile Picture" 
-                                 class="img-thumbnail" 
-                                 style="width: 50px; height: 50px; object-fit: cover;">
-                        </td>
-                        <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
-                        <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
-                        <td><?php echo htmlspecialchars($employee['LastName']); ?></td>
-                        <td><?php echo htmlspecialchars($employee['Position']); ?></td>
-                        <td><?php echo htmlspecialchars($employee['ContactNumber']); ?></td>
-                        <td><?php echo htmlspecialchars($employee['Email']); ?></td>
-                        <td>
-                            <a href="manage_edit_employees.php?employee_id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="8" class="text-center">No employees found.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
+    <?php if (!empty($employees)): ?>
+        <?php foreach ($employees as $employee): ?>
+            <tr>
+                <td class="text-center align-middle">
+                    <img src="<?php echo !empty($employee['ProfilePicture']) ? htmlspecialchars($employee['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
+                         alt="Profile Picture" 
+                         class="img-thumbnail" 
+                         style="width: 50px; height: 50px; object-fit: cover;">
+                </td>
+                <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
+                <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
+                <td><?php echo htmlspecialchars($employee['LastName']); ?></td>
+                <td><?php echo htmlspecialchars($employee['Position']); ?></td>
+                <td><?php echo htmlspecialchars($employee['Shift']); ?></td>
+                <td><?php echo htmlspecialchars($employee['ContactNumber']); ?></td>
+                <td><?php echo htmlspecialchars($employee['Email']); ?></td>
+                <td>
+                    <a href="manage_edit_employees.php?employee_id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <tr>
+            <td colspan="9" class="text-center">No employees found.</td>
+        </tr>
+    <?php endif; ?>
+</tbody>
     </table>
     <button class="btn btn-secondary mt-3" onclick="window.location.href='manager.php'">🔙 Back to Manager Hub</button>
 </div>

@@ -39,7 +39,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $employeeID = intval($_POST['employee_id']);
-    
+
+    // Validate required fields
+    $errors = [];
+    if (empty(trim($_POST['first_name']))) {
+        $errors[] = "First Name is required.";
+    }
+    if (empty(trim($_POST['last_name']))) {
+        $errors[] = "Last Name is required.";
+    }
+    if (empty(trim($_POST['contact_number']))) {
+        $errors[] = "Contact Number is required.";
+    }
+    if (empty(trim($_POST['email']))) {
+        $errors[] = "Email is required.";
+    }
+    if (empty(trim($_POST['address']))) {
+        $errors[] = "Address is required.";
+    }
+    if (empty($_POST['role_id'])) {
+        $errors[] = "Role is required.";
+    }
+    if (empty($_POST['shift_id'])) {
+        $errors[] = "Shift is required.";
+    }
+    if (empty(trim($_POST['hire_date']))) {
+        $errors[] = "Hire Date is required.";
+    }
+
+    // If there are errors, display them and stop execution
+    if (!empty($errors)) {
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                html: '" . implode('<br>', array_map('htmlspecialchars', $errors)) . "',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>";
+        exit;
+    }
+
     // Fetch employee details for the current employee ID
     $employee = $procedures->getEmployeeByID($employeeID);
 
@@ -58,12 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         exit;
     }
 
+    // Get updated values or retain original if empty
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $lastName = htmlspecialchars(trim($_POST['last_name']));
     $contactNumber = htmlspecialchars(trim($_POST['contact_number']));
     $email = htmlspecialchars(trim($_POST['email']));
     $address = htmlspecialchars(trim($_POST['address']));
-    $position = htmlspecialchars(trim($_POST['position']));
+    $role_id = intval($_POST['role_id']);
+    $shift_id = intval($_POST['shift_id']);
     $hireDate = htmlspecialchars(trim($_POST['hire_date']));
     $password = !empty($_POST['password']) ? password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT) : null;
     $profilePicture = isset($employee['ProfilePicture']) ? $employee['ProfilePicture'] : null; // Fallback to null if ProfilePicture is missing
@@ -120,7 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
                 $contactNumber,
                 $email,
                 $address,
-                $position,
+                $role_id,
+                $shift_id,
                 $hireDate,
                 $password
             );
@@ -133,7 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
                 $contactNumber,
                 $email,
                 $address,
-                $position,
+                $role_id,
+                $shift_id,
                 $hireDate
             );
         }
@@ -164,27 +209,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
     }
 }
 ?>
-<header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">Employee Management</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="manage_employees.php">Manage Employees</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="add_employee.php">Add Employee</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="logout.php">Logout</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+<header class="header">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
 </header>
+
 <div class="container mt-5">
     <h2 class="text-center">Edit Employee</h2>
     <form action="manage_edit_employees.php" method="POST" enctype="multipart/form-data">
@@ -210,21 +239,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
             <textarea class="form-control" id="address" name="address" required><?php echo htmlspecialchars($employee['Address']); ?></textarea>
         </div>
         <div class="form-group">
-            <label for="position">Position</label>
-            <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($employee['Position']); ?>" required>
+    <label for="role_id">Role</label>
+    <select class="form-control" id="role_id" name="role_id" required>
+        <option value="1" <?php echo isset($employee['role_id']) && $employee['role_id'] == 1 ? 'selected' : ''; ?>>Cashier</option>
+        <option value="2" <?php echo isset($employee['role_id']) && $employee['role_id'] == 2 ? 'selected' : ''; ?>>Cook</option>
+        <option value="3" <?php echo isset($employee['role_id']) && $employee['role_id'] == 3 ? 'selected' : ''; ?>>Dishwasher</option>
+        <option value="4" <?php echo isset($employee['role_id']) && $employee['role_id'] == 4 ? 'selected' : ''; ?>>Janitor</option>
+        <option value="5" <?php echo isset($employee['role_id']) && $employee['role_id'] == 5 ? 'selected' : ''; ?>>Server</option>
+        </select>
+    </div>
+        <div class="form-group">
+            <label for="shift_id">Shift</label>
+            <select class="form-control" id="shift_id" name="shift_id" required>
+                <option value="1" <?php echo $employee['shift_id'] == 1 ? 'selected' : ''; ?>>Day Duty</option>
+                <option value="2" <?php echo $employee['shift_id'] == 2 ? 'selected' : ''; ?>>Night Duty</option>
+            </select>
         </div>
+
+
         <div class="form-group">
             <label for="hire_date">Hire Date</label>
             <input type="date" class="form-control" id="hire_date" name="hire_date" value="<?php echo htmlspecialchars($employee['HireDate']); ?>" required>
         </div>
         <div class="form-group">
-            <label for="password">Password (leave blank if not changing)</label>
+            <label for="password">Password</label>
             <input type="password" class="form-control" id="password" name="password">
         </div>
         <div class="form-group">
             <label for="profile_picture">Profile Picture (leave blank to keep current)</label>
             <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
         </div>
+        
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="manage_employees.php" class="btn btn-secondary">Cancel</a>
     </form>
