@@ -97,3 +97,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || $_SERVER["REQUEST_METHOD"] == "GET")
     
 }
 ?>
+
+<script>
+// JavaScript code for handling the deleteManager action
+function deleteManager(managerID) {
+    fetch('crud.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            action: 'deleteManager',
+            manager_id: managerID
+        })
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log('Response from server:', data); // Debugging: Log the server response
+        Swal.fire({
+            title: 'Deleted!',
+            text: 'The manager has been deleted.',
+            icon: 'success',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            location.reload(); // Reload the page to reflect changes
+        });
+    })
+    .catch(error => {
+        Swal.fire({
+            title: 'Error!',
+            text: 'An error occurred while deleting the manager.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+        console.error('Error:', error);
+    });
+}
+</script>

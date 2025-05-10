@@ -38,8 +38,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         exit;
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Handle form submission
     $employeeID = intval($_POST['employee_id']);
+    
+    // Fetch employee details for the current employee ID
+    $employee = $procedures->getEmployeeByID($employeeID);
+
+    if (!$employee) {
+        echo "
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: 'Employee not found.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = 'manage_employees.php';
+            });
+        </script>";
+        exit;
+    }
+
     $firstName = htmlspecialchars(trim($_POST['first_name']));
     $lastName = htmlspecialchars(trim($_POST['last_name']));
     $contactNumber = htmlspecialchars(trim($_POST['contact_number']));
@@ -48,13 +66,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
     $position = htmlspecialchars(trim($_POST['position']));
     $hireDate = htmlspecialchars(trim($_POST['hire_date']));
     $password = !empty($_POST['password']) ? password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT) : null;
+    $profilePicture = isset($employee['ProfilePicture']) ? $employee['ProfilePicture'] : null; // Fallback to null if ProfilePicture is missing
+
+    // Handle profile picture upload
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $fileType = mime_content_type($_FILES['profile_picture']['tmp_name']);
+
+        if (!in_array($fileType, $allowedTypes)) {
+            echo "
+            <script>
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Invalid file type. Please upload a valid image (JPEG, PNG, GIF, or WEBP).',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = 'manage_employees.php';
+                });
+            </script>";
+            exit;
+        }
+
+        $uploadDir = '../photos/';
+        $uploadFile = $uploadDir . basename($_FILES['profile_picture']['name']);
+
+        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadFile)) {
+            $profilePicture = $uploadFile; // Save the new file path
+        } else {
+            echo "
+            <script>
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to upload profile picture. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.href = 'manage_employees.php';
+                });
+            </script>";
+            exit;
+        }
+    }
 
     try {
         // Update employee with or without password
         if ($password) {
-            $procedures->updateEmployeeWithPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password);
+            $procedures->updateEmployeeWithPassword(
+                $employeeID,
+                $profilePicture,
+                $firstName,
+                $lastName,
+                $contactNumber,
+                $email,
+                $address,
+                $position,
+                $hireDate,
+                $password
+            );
         } else {
-            $procedures->updateEmployeeWithoutPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+            $procedures->updateEmployeeWithoutPassword(
+                $employeeID,
+                $profilePicture,
+                $firstName,
+                $lastName,
+                $contactNumber,
+                $email,
+                $address,
+                $position,
+                $hireDate
+            );
         }
 
         echo "
@@ -73,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         <script>
             Swal.fire({
                 title: 'Error!',
-                text: 'Error updating employee: " . $e->getMessage() . "',
+                text: 'An error occurred while updating the employee: " . addslashes($e->getMessage()) . "',
                 icon: 'error',
                 confirmButtonText: 'OK'
             }).then(() => {
@@ -81,17 +162,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
             });
         </script>";
     }
-    exit;
 }
 ?>
-
-<header class="header">
-    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
-    <a href="manager_logout.php" class="btn btn-danger float-right">Logout</a>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Employee Management</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="manage_employees.php">Manage Employees</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="add_employee.php">Add Employee</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="logout.php">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 </header>
 <div class="container mt-5">
     <h2 class="text-center">Edit Employee</h2>
-    <form action="manage_edit_employees.php" method="POST">
+    <form action="manage_edit_employees.php" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['EmployeeID']); ?>">
         <div class="form-group">
             <label for="first_name">First Name</label>
@@ -124,6 +220,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         <div class="form-group">
             <label for="password">Password (leave blank if not changing)</label>
             <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <div class="form-group">
+            <label for="profile_picture">Profile Picture (leave blank to keep current)</label>
+            <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
         </div>
         <button type="submit" class="btn btn-primary">Save Changes</button>
         <a href="manage_employees.php" class="btn btn-secondary">Cancel</a>

@@ -106,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <table class="table table-bordered">
         <thead>
             <tr>
+            <th>Profile Picture</th>
                 <th>Employee ID</th>
                 <th>First Name</th>
                 <th>Last Name</th>
@@ -116,20 +117,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
         </thead>
         <tbody>
-            
+            <?php if (!empty($employees)): ?>
+                <?php foreach ($employees as $employee): ?>
+                    <tr>
+                        <td class ="text-center align-middle">
+                            <img src="<?php echo !empty($employee['ProfilePicture']) ? htmlspecialchars($employee['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
+                                 alt="Profile Picture" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
+                        <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['LastName']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['Position']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['ContactNumber']); ?></td>
+                        <td><?php echo htmlspecialchars($employee['Email']); ?></td>
+                        <td>
+                            <a href="manage_edit_employees.php?employee_id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($employee['EmployeeID']); ?></td>
-                    <td><?php echo htmlspecialchars($employee['FirstName']); ?></td>
-                    <td><?php echo htmlspecialchars($employee['LastName']); ?></td>
-                    <td><?php echo htmlspecialchars($employee['Position']); ?></td>
-                    <td><?php echo htmlspecialchars($employee['ContactNumber']); ?></td>
-                    <td><?php echo htmlspecialchars($employee['Email']); ?></td>
-                    <td>
-                        <a href="manage_edit_employees.php?employee_id=<?php echo $employee['EmployeeID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $employee['EmployeeID']; ?>)">Delete</button>
-                    </td>
+                    <td colspan="8" class="text-center">No employees found.</td>
                 </tr>
-    
+            <?php endif; ?>
         </tbody>
     </table>
     <button class="btn btn-secondary mt-3" onclick="window.location.href='manager.php'">🔙 Back to Manager Hub</button>

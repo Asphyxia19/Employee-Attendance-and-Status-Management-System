@@ -57,6 +57,7 @@ try {
     <table class="table table-bordered">
         <thead>
             <tr>
+                <th>Profile Picture</th>
                 <th>Manager ID</th>
                 <th>First Name</th>
                 <th>Last Name</th>
@@ -65,25 +66,31 @@ try {
             </tr>
         </thead>
         <tbody>
-    <?php if (!empty($managers)): ?>
-        <?php foreach ($managers as $manager): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($manager['ManagerID']); ?></td>
-                <td><?php echo htmlspecialchars($manager['FirstName']); ?></td>
-                <td><?php echo htmlspecialchars($manager['LastName']); ?></td>
-                <td><?php echo htmlspecialchars($manager['Email']); ?></td>
-                <td>
-                    <a href="manage_edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $manager['ManagerID']; ?>)">Delete</button>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <tr>
-            <td colspan="5" class="text-center">No managers found.</td>
-        </tr>
-    <?php endif; ?>
-</tbody>
+            <?php if (!empty($managers)): ?>
+                <?php foreach ($managers as $manager): ?>
+                    <tr>
+                        <td class="text-center align-middle">
+                            <img src="<?php echo !empty($manager['ProfilePicture']) ? htmlspecialchars($manager['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
+                                 alt="Profile Picture" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
+                        <td><?php echo htmlspecialchars($manager['ManagerID']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['FirstName']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['LastName']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['Email']); ?></td>
+                        <td>
+                            <a href="manage_edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $manager['ManagerID']; ?>)">Delete</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="6" class="text-center">No managers found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
     </table>
     <button class="btn btn-secondary mt-3" onclick="window.location.href='manager.php'">🔙 Back to Manager Hub</button>
 </div>
@@ -101,11 +108,10 @@ try {
         }).then((result) => {
             if (result.isConfirmed) {
                 // Perform the delete action
-                fetch('crud.php', {
+                fetch('manage_delete_manager.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
-                        action: 'deleteManager',
                         manager_id: managerID
                     })
                 })

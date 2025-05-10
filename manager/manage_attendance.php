@@ -29,10 +29,7 @@ try {
     $employees = $procedures->getAllEmployees();
 
     // Fetch all attendance records for all employees
-    $query = "SELECT * FROM attendance_log ORDER BY Date DESC";
-    $stmt = $db->prepare($query);
-    $stmt->execute();
-    $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $attendanceRecords = $procedures->getAttendanceLogs();
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }
@@ -47,22 +44,27 @@ try {
 <div class="container mt-4">
     <h3>Attendance Records (All Employees)</h3>
 
-    <?php if (empty($attendanceRecords)): ?>
-        <p>No attendance records found.</p>
-    <?php else: ?>
-        <table class="table table-bordered table-striped">
-            <thead class="thead-dark">
-                <tr>
-                    <th>EmployeeID</th>
-                    <th>Date</th>
-                    <th>CheckIn</th>
-                    <th>CheckOut</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Profile Picture</th>
+                <th>EmployeeID</th>
+                <th>Date</th>
+                <th>CheckIn</th>
+                <th>CheckOut</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($attendanceRecords)): ?>
                 <?php foreach ($attendanceRecords as $record): ?>
                     <tr>
+                        <td class="text-center align-middle">
+                            <img src="<?php echo !empty($record['ProfilePicture']) ? htmlspecialchars($record['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
+                                 alt="Profile Picture" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
                         <td><?= htmlspecialchars($record['EmployeeID']) ?></td>
                         <td><?= htmlspecialchars($record['Date']) ?></td>
                         <td><?= htmlspecialchars($record['CheckIn']) ?></td>
@@ -70,9 +72,14 @@ try {
                         <td><?= htmlspecialchars($record['Status']) ?></td>
                     </tr>
                 <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="6" class="text-center">No attendance records found.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+    
 
     <a href="manager.php" class="btn btn-secondary mt-3">🔙 Back to Manager Hub</a>
 </div>

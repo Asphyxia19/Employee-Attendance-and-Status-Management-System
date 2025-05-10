@@ -47,8 +47,8 @@ class Procedures {
         $this->callProcedure('DeleteEmployee', [$employeeID]);
     }
 
-    public function getAllAttendanceLogs($employeeID) {
-        $stmt = $this->callProcedure('GetAllAttendanceLogs', [$employeeID]);
+    public function getAttendanceLogs() {
+        $stmt = $this->callProcedure('GetAttendanceLogs', []); // No need to pass the PDO object
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -66,16 +66,18 @@ class Procedures {
     }
 
     public function getAllManagers() {
-        $stmt = $this->callProcedure('GetAllManagers');
+        $stmt = $this->callProcedure('GetAllManagers', []);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function deleteManager($managerID) {
-        $this->callProcedure('DeleteManager', [$managerID]);
+    $this->callProcedure('DeleteManager', [$managerID]);
     }
 
-    public function createManager($firstName, $lastName, $email, $password) {
-        $this->callProcedure('CreateManager', [$firstName, $lastName, $email, $password]);
+    public function createManager($managerID, $firstName, $lastName, $contactNumber, $email, $password, $profilePicture) {
+        $this->callProcedure('CreateManager', [
+            $managerID, $firstName, $lastName, $contactNumber, $email, $password, $profilePicture
+        ]);
     }
 
     public function getManagerByID($managerID) {
@@ -158,16 +160,32 @@ class Procedures {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function updateEmployeeWithPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
-        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
-    }
-    
-    public function updateEmployeeWithoutPassword($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate) {
-        $this->callProcedure('UpdateEmployeeWithoutPassword', [$employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate]);
+    public function updateEmployeeWithPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
+        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
     }
 
-    public function updateManagerWithID($originalManagerID, $managerID, $firstName, $lastName, $email) {
-        $this->callProcedure('UpdateManagerWithID', [$originalManagerID, $managerID, $firstName, $lastName, $email]);
+    public function updateEmployeeWithoutPassword($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, ) {
+        $this->callProcedure('UpdateEmployeeWithPassword', [$employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate,]);
     }
+
+    public function updateManagerWithPassword($originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $password) {
+        $this->callProcedure('UpdateManagerWithPassword', [$originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $password]);
+    }
+    
+    public function updateManagerWithoutPassword($originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email) {
+        $this->callProcedure('UpdateManagerWithoutPassword', [$originalManagerID, $managerID, $profilePicture, $firstName, $lastName, $contactNumber, $email]);
+    }
+
+    public function createEmployeeWithProfilePicture($employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
+        $this->callProcedure('CreateEmployeeWithProfilePicture', [
+            $employeeID, $profilePicture, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password
+        ]);
+    }
+
+    public function createManagerWithProfilePicture($profilePicture, $firstName, $lastName, $email, $password) {
+        $this->callProcedure('CreateManagerWithProfilePicture', [$profilePicture, $firstName, $lastName, $email, $password]);
+    }
+
+    
 }
 ?>
