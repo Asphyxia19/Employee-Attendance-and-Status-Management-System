@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || $_SERVER["REQUEST_METHOD"] == "GET")
             $hireDate = htmlspecialchars(trim($_POST['hire_date']));
 
             try {
-                $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate);
+                $procedures->updateEmployee($employeeID, $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password);
                 echo "Employee updated successfully!";
             } catch (Exception $e) {
                 echo "Error: " . $e->getMessage();

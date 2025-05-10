@@ -12,72 +12,85 @@
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
-
 <?php
-session_start(); // Ensure session is started
-
+session_start(); // Start the session
 require_once '../functions/db_connection.php';
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
 
-    $employeeID = htmlspecialchars(trim($_POST['employee_id']));
+    if (!$db) {
+        die("Database connection failed.");
+    }
+
+    $managerID = htmlspecialchars(trim($_POST['EmployeeID']));
     $password = htmlspecialchars(trim($_POST['password']));
 
     try {
-        // Check if the employee exists and the password matches
-        $query = "SELECT EmployeeID, Password FROM employee_info WHERE EmployeeID = :employee_id";
+        // Check if the manager exists and fetch their details
+        $query = "SELECT EmployeeID, FirstName, LastName, Password FROM employee_info WHERE EmployeeID = :employee_id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':employee_id', $employeeID, PDO::PARAM_INT);
         $stmt->execute();
-        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+        $manager = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($employee && password_verify($password, $employee['Password'])) {
-            // Password matches (hashed)
-            $_SESSION['employee_id'] = $employee['EmployeeID'];
+        if ($manager) {
+            $storedPassword = $manager['Password'];
 
-            echo "
-            <script>
-                Swal.fire({
-                    title: 'Welcome!',
-                    text: 'Login Successful',
-                    icon: 'success'
-                }).then(function() {
-                    window.location.href = 'employee.php';  // Redirect to employee dashboard
-                });
-            </script>";
-        } elseif ($employee && $password === $employee['Password']) {
-            // Password matches (plain text)
-            $_SESSION['employee_id'] = $employee['EmployeeID'];
-            // Optionally rehash the password
-            $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
-            $updateQuery = "UPDATE employee_info SET Password = :password WHERE EmployeeID = :employee_id";
-            $updateStmt = $db->prepare($updateQuery);
-            $updateStmt->bindParam(':password', $newHashedPassword);
-            $updateStmt->bindParam(':employee_id', $employeeID);
-            $updateStmt->execute();
+            // Check if the password is hashed
+            if (password_verify($password, $storedPassword)) {
+                // Password matches (hashed)
+                $_SESSION['employee_id'] = $manager['EmployeeID'];
+                $_SESSION['employee_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
 
-            echo "
-            <script>
-                Swal.fire({
-                    title: 'Welcome!',
-                    text: 'Login Successful',
-                    icon: 'success'
-                }).then(function() {
-                    window.location.href = 'employee.php';  // Redirect to employee dashboard
-                });
-            </script>";
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'employee.php';  // Redirect to dashboard
+                    });
+                </script>";
+            } elseif ($password === $storedPassword) {
+                // Password matches (plain text)
+                $_SESSION['employee_id'] = $manager['EmployeeID'];
+                $_SESSION['employee_name'] = $manager['FirstName'] . ' ' . $manager['LastName'];
+
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'employee.php';  // Redirect to dashboard
+                    });
+                </script>";
+            } else {
+                // Password does not match
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Invalid password. Please try again.',
+                        icon: 'error'
+                    }).then(function() {
+                        window.location.href = 'employee_login.php';  // Redirect back to login page
+                    });
+                </script>";
+            }
         } else {
-            // Invalid credentials
+            // Manager not found
             echo "
             <script>
                 Swal.fire({
                     title: 'Oops!',
-                    text: 'Invalid Employee ID or password. Please try again.',
+                    text: 'Employee ID not found. Please try again.',
                     icon: 'error'
                 }).then(function() {
-                    window.location.href = 'employee_login.php';
+                    window.location.href = 'employee_login.php';  // Redirect back to login page
                 });
             </script>";
         }
@@ -103,7 +116,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST" action="employee_login.php">
                 <div class="form-group">
                     <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" maxlength= "5" ="employee_id" placeholder="Enter your Employee ID" required>
+                    <input type="text" class="form-control" id="employeeId" maxlength="5" name="EmployeeID" placeholder="Enter your Employee ID" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>

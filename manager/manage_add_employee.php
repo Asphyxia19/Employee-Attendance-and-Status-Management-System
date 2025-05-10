@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role_id = intval($_POST['role_id']); // Role ID from dropdown
     $shift_id = intval($_POST['shift_id']); // Shift ID from dropdown
     $hireDate = htmlspecialchars(trim($_POST['hire_date']));
-    $password = password_hash(htmlspecialchars(trim($_POST['password'])), PASSWORD_BCRYPT); // Hash the password
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
     $profilePicture = null;
 
     // Handle profile picture upload

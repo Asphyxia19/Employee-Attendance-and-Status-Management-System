@@ -196,20 +196,9 @@ class Procedures {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function insertRequest($employeeId, $requestType, $details) {
-    try {
-        $stmt = $this->conn->prepare("CALL InsertRequest(:employee_id, :request_type, :details)");
-        $stmt->bindParam(':employee_id', $employeeId, PDO::PARAM_INT);
-        $stmt->bindParam(':request_type', $requestType, PDO::PARAM_STR);
-        $stmt->bindParam(':details', $details, PDO::PARAM_STR);
-        $stmt->execute();
-        return true; // Return true if the procedure executes successfully
-    } catch (PDOException $e) {
-        throw new Exception("Error calling InsertRequest procedure: " . $e->getMessage());
-    }
-
-    
-    }
+   public function insertRequest($employeeId, $requestType, $details, $createdAt) {
+    $this->callProcedure('InsertRequest', [$employeeId, $requestType, $details, $createdAt]);
+}
     public function getAllShifts() {
         $stmt = $this->callProcedure('GetAllShifts');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -218,6 +207,15 @@ class Procedures {
         $stmt = $this->callProcedure('GetAllPositions');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getAllRequests() {
+    $stmt = $this->callProcedure('GetAllRequests');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function noteRequest($requestId) {
+    $this->callProcedure('NoteRequest', [$requestId]);
+}
 
 }
 ?>

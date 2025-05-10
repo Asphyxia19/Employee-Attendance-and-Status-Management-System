@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $employeeId = $_POST['employee_id'];
     $requestType = $_POST['request_type'];
     $details = null;
+    $createdAt = null;
 
     try {
         // Initialize the database connection
@@ -31,24 +32,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Initialize the Procedures class
         $procedures = new Procedures($conn);
 
-        // Prepare details based on request type
+        // Prepare details and CreatedAt based on request type
         if ($requestType === 'Change Shift') {
             $currentShift = $_POST['current_shift'];
             $requestedShift = $_POST['requested_shift'];
-            $shiftChangeDate = $_POST['shift_change_date'];
+            $shiftChangeDate = $_POST['shift_change_date']; // Capture the user-inputted date
             $details = json_encode([
                 'current_shift' => $currentShift,
-                'requested_shift' => $requestedShift,
-                'shift_change_date' => $shiftChangeDate
+                'requested_shift' => $requestedShift
             ]);
+            $createdAt = $shiftChangeDate; // Use the user-inputted date for CreatedAt
         } elseif ($requestType === 'Sick Leave') {
+            $sickLeaveDate = $_POST['sick_leave_date']; // Capture the user-inputted date
             $details = json_encode(['reason' => $_POST['sick_leave_reason']]);
+            $createdAt = $sickLeaveDate; // Use the user-inputted date for CreatedAt
         } elseif ($requestType === 'Vacation Leave') {
+            $vacationLeaveDate = $_POST['vacation_leave_date']; // Capture the user-inputted date
             $details = json_encode(['reason' => $_POST['vacation_leave_reason']]);
+            $createdAt = $vacationLeaveDate; // Use the user-inputted date for CreatedAt
         }
 
         // Call the insertRequest function
-        $procedures->insertRequest($employeeId, $requestType, $details);
+        $procedures->insertRequest($employeeId, $requestType, $details, $createdAt);
 
         echo '<div class="alert alert-success text-center">Request submitted successfully!</div>';
     } catch (Exception $e) {
@@ -145,6 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <textarea class="form-control" id="sickLeaveReason" name="sick_leave_reason" 
                                           rows="3" placeholder="Please explain your medical condition..." required></textarea>
                             </div>
+                            <div class="form-group">
+                                <label for="sickLeaveDate" class="required-field">Requested Date</label>
+                                <input type="date" class="form-control" id="sickLeaveDate" name="sick_leave_date" required>
+                            </div>
                         </div>
                         <!-- Vacation Leave Details -->
                         <div class="request-details" id="vacationLeaveDetails">
@@ -152,6 +161,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="vacationLeaveReason" class="required-field">Reason for Vacation Leave</label>
                                 <textarea class="form-control" id="vacationLeaveReason" name="vacation_leave_reason" 
                                           rows="3" placeholder="Please explain the purpose of your vacation..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="vacationLeaveDate" class="required-field">Requested Date</label>
+                                <input type="date" class="form-control" id="vacationLeaveDate" name="vacation_leave_date" required>
                             </div>
                         </div>
                         <div class="form-group text-center mt-4">
@@ -189,33 +202,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Form validation
     $('#requestForm').submit(function(e) {
-        if (!$('input[name="request_type"]:checked').length) {
+    if (!$('input[name="request_type"]:checked').length) {
+        e.preventDefault();
+        Swal.fire('Error', 'Please select a request type.', 'error');
+        return false;
+    }
+
+    // Validate shift change selection
+    if ($('#changeShift').is(':checked')) {
+        if (!$('input[name="current_shift"]:checked').length) {
             e.preventDefault();
-            Swal.fire('Error', 'Please select a request type.', 'error');
+            Swal.fire('Error', 'Please select your current shift.', 'error');
             return false;
         }
-        
-        // Validate shift change selection
-        if ($('#changeShift').is(':checked')) {
-            if (!$('input[name="current_shift"]:checked').length) {
-                e.preventDefault();
-                Swal.fire('Error', 'Please select your current shift.', 'error');
-                return false;
-            }
-            if (!$('input[name="requested_shift"]:checked').length) {
-                e.preventDefault();
-                Swal.fire('Error', 'Please select your requested shift.', 'error');
-                return false;
-            }
-            if (!$('#shiftChangeDate').val()) {
-                e.preventDefault();
-                Swal.fire('Error', 'Please select the requested date.', 'error');
-                return false;
-            }
+        if (!$('input[name="requested_shift"]:checked').length) {
+            e.preventDefault();
+            Swal.fire('Error', 'Please select your requested shift.', 'error');
+            return false;
         }
-        
-        return true;
-    });
+        if (!$('#shiftChangeDate').val()) {
+            e.preventDefault();
+            Swal.fire('Error', 'Please select the requested date.', 'error');
+            return false;
+        }
+    }
+
+    // Validate sick leave date
+    if ($('#sickLeave').is(':checked')) {
+        if (!$('#sickLeaveDate').val()) {
+            e.preventDefault();
+            Swal.fire('Error', 'Please select the requested date for Sick Leave.', 'error');
+            return false;
+        }
+    }
+
+    // Validate vacation leave date
+    if ($('#vacationLeave').is(':checked')) {
+        if (!$('#vacationLeaveDate').val()) {
+            e.preventDefault();
+            Swal.fire('Error', 'Please select the requested date for Vacation Leave.', 'error');
+            return false;
+        }
+    }
+
+    return true;
+});
     // Set minimum dates for date inputs to today
     const today = new Date().toISOString().split('T')[0];
     $('input[type="date"]').attr('min', today);

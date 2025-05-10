@@ -30,7 +30,7 @@ if (!isset($_SESSION['manager_id'])) {
             <p>What do you want to do today?</p>
             <a href="manage_attendance.php" class="btn btn-primary btn-lg btn-block mb-3">📋 Attendance Logs</a>
             <a href="manage_employees.php" class="btn btn-primary btn-lg btn-block mb-3">👥 Manage Employees</a>
-            <a href="show_requests.php" class="btn btn-primary btn-lg btn-block mb-3">📩 Show Requests</a>
+            <a href="manage_requests.php" class="btn btn-primary btn-lg btn-block mb-3">📩 Show Requests</a>
             <a href="manager_hub.php" class="btn btn-primary btn-lg btn-block mb-3">🏢 Manager Hub</a>
         </div>
     </div>
