@@ -33,8 +33,12 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
-    // Fetch all employees
-    $employees = $procedures->getAllEmployees();
+    if (isset($_GET['search']) && !empty($_GET['search'])) {
+        $searchTerm = htmlspecialchars(trim($_GET['search']));
+        $employees = $procedures->searchEmployees($searchTerm);
+    } else {
+        $employees = $procedures->getAllEmployees();
+    }
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }
@@ -102,6 +106,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Employees Section -->
     <h3>Employees</h3>
+    <div class="mb-3">
+        <form method="GET" action="manage_employees.php">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search employees..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
     <button class="btn btn-primary mb-3" onclick="window.location.href='manage_add_employee.php'">Add Employee</button>
     <table class="table table-bordered">
         <thead>

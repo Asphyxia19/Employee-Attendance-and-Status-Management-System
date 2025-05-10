@@ -289,6 +289,44 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `LoginManagerByID` (IN `p_ManagerID`
         ManagerID = p_ManagerID AND Password = p_Password;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SearchEmployees` (IN `search_term` VARCHAR(255))
+BEGIN
+    SELECT 
+        EmployeeID,
+        ProfilePicture,
+        FirstName,
+        LastName,
+        ContactNumber,
+        Email,
+        Address,
+        Position,
+        HireDate
+    FROM 
+        employee_info
+    WHERE 
+        FirstName LIKE CONCAT('%', search_term, '%') OR
+        LastName LIKE CONCAT('%', search_term, '%') OR
+        Email LIKE CONCAT('%', search_term, '%') OR
+        EmployeeID LIKE CONCAT('%', search_term, '%');
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SearchManagers` (IN `search_term` VARCHAR(255))
+BEGIN
+    SELECT 
+        ManagerID,
+        ProfilePicture,
+        FirstName,
+        LastName,
+        Email
+    FROM 
+        manager_info
+    WHERE 
+        FirstName LIKE CONCAT('%', search_term, '%') OR
+        LastName LIKE CONCAT('%', search_term, '%') OR
+        Email LIKE CONCAT('%', search_term, '%') OR
+        ManagerID LIKE CONCAT('%', search_term, '%');
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateEmployee` (IN `p_EmployeeID` INT, IN `p_FirstName` VARCHAR(255), IN `p_LastName` VARCHAR(255), IN `p_ContactNumber` VARCHAR(20), IN `p_Email` VARCHAR(255), IN `p_Address` TEXT, IN `p_Position` VARCHAR(100), IN `p_HireDate` DATE)   BEGIN
     UPDATE employee_info
     SET 

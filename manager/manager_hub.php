@@ -32,11 +32,11 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
-    // Fetch all managers using PDO
-    $managers = $procedures->getAllManagers();
-
-    if (empty($managers)) {
-        echo "<p class='text-center'>No managers found.</p>";
+    if (isset($_GET['search']) && !empty($_GET['search'])) {
+        $searchTerm = htmlspecialchars(trim($_GET['search']));
+        $managers = $procedures->searchManagers($searchTerm);
+    } else {
+        $managers = $procedures->getAllManagers();
     }
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
@@ -54,6 +54,16 @@ try {
     <!-- Managers Section -->
     <h3>Managers</h3>
     <button class="btn btn-primary mb-3" onclick="window.location.href='manage_add_manager.php'">Add Manager</button>
+    <div class="mb-3">
+        <form method="GET" action="manager_hub.php">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search managers..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
     <table class="table table-bordered">
         <thead>
             <tr>
