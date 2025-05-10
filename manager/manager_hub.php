@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+<?php
+session_start(); 
+if (!isset($_SESSION['manager_id'])) {
+    echo "Session variable 'manager_id' is not set.";
+    exit;
+}
+?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,9 +16,9 @@
 </head>
 <body>
 <?php
-session_start();
 require_once '../functions/db_connection.php';
 require_once '../functions/procedures.php';
+require_once '../functions/session.php';
 
 // Check if the manager is logged in
 if (!isset($_SESSION['manager_id'])) {
@@ -26,8 +32,12 @@ $db = $database->getConnection();
 $procedures = new Procedures($db);
 
 try {
-    // Fetch all managers
-    $managers = $procedures->getAllManagers();
+    if (isset($_GET['search']) && !empty($_GET['search'])) {
+        $searchTerm = htmlspecialchars(trim($_GET['search']));
+        $managers = $procedures->searchManagers($searchTerm);
+    } else {
+        $managers = $procedures->getAllManagers();
+    }
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());
 }
@@ -43,10 +53,21 @@ try {
 
     <!-- Managers Section -->
     <h3>Managers</h3>
-    <button class="btn btn-primary mb-3" onclick="window.location.href='add_manager.php'">Add Manager</button>
+    <button class="btn btn-primary mb-3" onclick="window.location.href='manage_add_manager.php'">Add Manager</button>
+    <div class="mb-3">
+        <form method="GET" action="manager_hub.php">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search managers..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
     <table class="table table-bordered">
         <thead>
             <tr>
+                <th>Profile Picture</th>
                 <th>Manager ID</th>
                 <th>First Name</th>
                 <th>Last Name</th>
@@ -55,20 +76,33 @@ try {
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($managers as $manager): ?>
+            <?php if (!empty($managers)): ?>
+                <?php foreach ($managers as $manager): ?>
+                    <tr>
+                        <td class="text-center align-middle">
+                            <img src="<?php echo !empty($manager['ProfilePicture']) ? htmlspecialchars($manager['ProfilePicture']) : '../photos/default-profile.png'; ?>" 
+                                 alt="Profile Picture" 
+                                 class="img-thumbnail" 
+                                 style="width: 50px; height: 50px; object-fit: cover;">
+                        </td>
+                        <td><?php echo htmlspecialchars($manager['ManagerID']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['FirstName']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['LastName']); ?></td>
+                        <td><?php echo htmlspecialchars($manager['Email']); ?></td>
+                        <td>
+                            <a href="manage_edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $manager['ManagerID']; ?>)">Delete</button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($manager['ManagerID']); ?></td>
-                    <td><?php echo htmlspecialchars($manager['FirstName']); ?></td>
-                    <td><?php echo htmlspecialchars($manager['LastName']); ?></td>
-                    <td><?php echo htmlspecialchars($manager['Email']); ?></td>
-                    <td>
-                        <a href="edit_manager.php?manager_id=<?php echo $manager['ManagerID']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?php echo $manager['ManagerID']; ?>)">Delete</button>
-                    </td>
+                    <td colspan="6" class="text-center">No managers found.</td>
                 </tr>
-            <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
+    <button class="btn btn-secondary mt-3" onclick="window.location.href='manager.php'">🔙 Back to Manager Hub</button>
 </div>
 
 <script>
@@ -84,11 +118,10 @@ try {
         }).then((result) => {
             if (result.isConfirmed) {
                 // Perform the delete action
-                fetch('crud.php', {
+                fetch('manage_delete_manager.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
-                        action: 'deleteManager',
                         manager_id: managerID
                     })
                 })

@@ -12,64 +12,101 @@
 <header class="header">
     <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
 </header>
-
 <?php
-session_start(); // Ensure session is started
+session_start(); // Start the session
 
 require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $database = new Database();
     $db = $database->getConnection();
-    $procedures = new Procedures($db);
 
-    $employeeID = htmlspecialchars(trim($_POST['employee_id']));
+    $employeeID = htmlspecialchars(trim($_POST['EmployeeID']));
     $password = htmlspecialchars(trim($_POST['password']));
 
-    // Check if the employee exists and the password matches
-    $query = "SELECT EmployeeID, Password FROM employee_info WHERE EmployeeID = ?";
-    $stmt = $db->prepare($query);
-    $stmt->bind_param("i", $employeeID);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    try {
+        // Check if the employee exists
+        $query = "SELECT EmployeeID, Password FROM employee_info WHERE EmployeeID = :employee_id";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':employee_id', $employeeID, PDO::PARAM_INT);
+        $stmt->execute();
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($result && $result->num_rows === 1) {
-        $employee = $result->fetch_assoc();
+        if ($employee) {
+            $storedPassword = $employee['Password'];
 
-        if ($password === $employee['Password']) {
-            $_SESSION['employee_id'] = $employee['EmployeeID']; // Store EmployeeID in session
-            echo "
-            <script>
-                Swal.fire({
-                    title: 'Welcome!',
-                    text: 'Login Successful',
-                    icon: 'success'
-                }).then(function() {
-                    window.location.href = 'employee.php';  // Redirect to employee dashboard
-                });
-            </script>";
+            // Verify the password
+            if (password_verify($password, $storedPassword)) {
+                // Password matches (hashed)
+                $_SESSION['employee_id'] = $employee['EmployeeID'];
+
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'employee.php';  // Redirect to employee dashboard
+                    });
+                </script>";
+            } elseif ($password === $storedPassword) {
+                // Password matches (plain-text)
+                $_SESSION['employee_id'] = $employee['EmployeeID'];
+
+                // Rehash the plain-text password and update the database
+                $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $updateQuery = "UPDATE employee_info SET Password = :password WHERE EmployeeID = :employee_id";
+                $updateStmt = $db->prepare($updateQuery);
+                $updateStmt->bindParam(':password', $newHashedPassword);
+                $updateStmt->bindParam(':employee_id', $employeeID);
+                $updateStmt->execute();
+
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Welcome!',
+                        text: 'Login Successful',
+                        icon: 'success'
+                    }).then(function() {
+                        window.location.href = 'employee.php';  // Redirect to employee dashboard
+                    });
+                </script>";
+            } else {
+                // Password does not match
+                echo "
+                <script>
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Invalid Employee ID or password. Please try again.',
+                        icon: 'error'
+                    }).then(function() {
+                        window.location.href = 'employee_login.php';
+                    });
+                </script>";
+            }
         } else {
+            // Employee not found
             echo "
             <script>
                 Swal.fire({
                     title: 'Oops!',
-                    text: 'Invalid Employee ID or password. Please try again.',
+                    text: 'Employee ID not found. Please try again.',
                     icon: 'error'
                 }).then(function() {
                     window.location.href = 'employee_login.php';
                 });
             </script>";
         }
-    } else {
+    } catch (Exception $e) {
+        // Handle any errors
         echo "
         <script>
             Swal.fire({
-                title: 'Oops!',
-                text: 'Invalid Employee ID or password. Please try again.',
-                icon: 'error'
-            }).then(function() {
-                window.location.href = 'employee_login.php';
+                title: 'Error!',
+                text: 'An error occurred: " . $e->getMessage() . "',
+                icon: 'error',
+                confirmButtonText: 'OK'
             });
         </script>";
     }
@@ -83,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST" action="employee_login.php">
                 <div class="form-group">
                     <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" name="employee_id" placeholder="Enter your Employee ID" required>
+                    <input type="text" class="form-control" id="employeeId" maxlength="5" name="EmployeeID" placeholder="Enter your Employee ID" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>

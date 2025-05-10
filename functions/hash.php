@@ -5,14 +5,19 @@ $database = new Database();
 $db = $database->getConnection();
 
 $query = "SELECT ManagerID, Password FROM manager_info";
-$result = $db->query($query);
+$stmt = $db->prepare($query);
+$stmt->execute();
 
-while ($row = $result->fetch_assoc()) {
-    $hashedPassword = password_hash($row['Password'], PASSWORD_DEFAULT);
-    $updateQuery = "UPDATE manager_info SET Password = ? WHERE ManagerID = ?";
-    $stmt = $db->prepare($updateQuery);
-    $stmt->bind_param("si", $hashedPassword, $row['ManagerID']);
-    $stmt->execute();
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    // Check if the password is already hashed
+    if (!password_verify('test', $row['Password'])) { // Replace 'test' with a known plain-text password
+        $hashedPassword = password_hash($row['Password'], PASSWORD_DEFAULT);
+        $updateQuery = "UPDATE manager_info SET Password = :password WHERE ManagerID = :manager_id";
+        $updateStmt = $db->prepare($updateQuery);
+        $updateStmt->bindParam(':password', $hashedPassword);
+        $updateStmt->bindParam(':manager_id', $row['ManagerID']);
+        $updateStmt->execute();
+    }
 }
 
 echo "Passwords updated successfully!";

@@ -1,265 +1,178 @@
+<?php 
+require_once '../functions/db_connection.php';
+date_default_timezone_set('Asia/Manila');
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+$swalScript = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $employee_id = intval($_POST['employee_id']);
+    $password = $_POST['password'];
+    $action = $_POST['action'];
+    $current_date = date('Y-m-d');
+    $current_time = date('H:i:s');
+
+    // 1. CHECK IF EMPLOYEE EXISTS
+    $stmt = $conn->prepare("CALL CheckEmployeeExists(:employee_id)");
+    $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$result) {
+        $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
+        $stmt->closeCursor();
+    } else {
+        $stmt->closeCursor();
+
+        // 2. VERIFY PASSWORD
+        $stmt = $conn->prepare("CALL GetEmployeePassword(:employee_id)");
+        $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+
+        if ($employee) {
+            $storedPassword = $employee['Password'];
+
+            // Verify the password
+            if (password_verify($password, $storedPassword)) {
+                // Password matches (hashed)
+                // Proceed with attendance logic
+            } elseif ($password === $storedPassword) {
+                // Password matches (plain-text)
+                // Rehash the plain-text password and update the database
+                $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $updateStmt = $conn->prepare("CALL UpdateEmployeePassword(:employee_id, :password)");
+                $updateStmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+                $updateStmt->bindValue(':password', $newHashedPassword, PDO::PARAM_STR);
+                $updateStmt->execute();
+                $updateStmt->closeCursor();
+
+                // Proceed with attendance logic
+            } else {
+                // Password does not match
+                $swalScript = "Swal.fire('Error', 'Incorrect password.', 'error');";
+            }
+        } else {
+            // Employee not found
+            $swalScript = "Swal.fire('Error', 'Employee ID does not exist.', 'error');";
+        }
+
+        // 3. GET TODAY'S ATTENDANCE
+        $stmt = $conn->prepare("CALL GetTodayAttendance(:employee_id, :current_date)");
+        $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+        $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
+        $stmt->execute();
+        $record = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+
+        if ($record) {
+            if ($action === 'Time In') {
+                $swalScript = "Swal.fire('Warning', 'Already timed in at {$record['CheckIn']}.', 'warning');";
+            } elseif ($action === 'Time Out') {
+                if (!empty($record['CheckOut'])) {
+                    $swalScript = "Swal.fire('Info', 'Already timed out at {$record['CheckOut']}.', 'info');";
+                } else {
+                    $stmt = $conn->prepare("CALL UpdateTimeOut(:employee_id, :current_date, :current_time)");
+                    $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+                    $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
+                    $stmt->bindValue(':current_time', $current_time, PDO::PARAM_STR);
+                    $success = $stmt->execute();
+                    $swalScript = $success
+                        ? "Swal.fire('Success', 'Time out recorded at $current_time.', 'success').then(() => location.reload());"
+                        : "Swal.fire('Error', 'Failed to record time out.', 'error');";
+                    $stmt->closeCursor();
+                }
+            }
+        } else {
+            if ($action === 'Time In') {
+                $stmt = $conn->prepare("CALL InsertTimeIn(:employee_id, :current_date, :current_time)");
+                $stmt->bindValue(':employee_id', $employee_id, PDO::PARAM_INT);
+                $stmt->bindValue(':current_date', $current_date, PDO::PARAM_STR);
+                $stmt->bindValue(':current_time', $current_time, PDO::PARAM_STR);
+                $success = $stmt->execute();
+                $swalScript = $success
+                    ? "Swal.fire('Success', 'Time in recorded at $current_time.', 'success').then(() => location.reload());"
+                    : "Swal.fire('Error', 'Failed to record time in.', 'error');";
+                $stmt->closeCursor();
+            } elseif ($action === 'Time Out') {
+                $swalScript = "Swal.fire('Error', 'You must time in before timing out.', 'error');";
+            }
+        }
+    }
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        #clock {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-<header class="header">
-<img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo">
+
+<header class="header text-center py-4">
+    <img src="../photos/logo.png" alt="ChooksToJarell Logo" class="logo mb-3" style="max-height: 100px;">
+    <h2 class="text-white">Attendance Tracker</h2>
 </header>
-<?php 
-require_once '../functions/db_connection.php';
-require_once '../functions/procedures.php';
 
-// Define the validateAttendance function
-function validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status) {
-    // Check if the employee exists
-    $query = "SELECT EmployeeID FROM employee_info WHERE EmployeeID = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $employee_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 0) {
-        return "Employee ID does not exist.";
-    }
-
-    // Check if attendance date is valid
-    if (strtotime($attendance_date) === false) {
-        return "Invalid attendance date.";
-    }
-
-    // Check if check-in time is valid
-    if (strtotime($check_in) === false) {
-        return "Invalid check-in time.";
-    }
-
-    // Check if check-out time is valid (if provided)
-    if (!empty($check_out) && strtotime($check_out) === false) {
-        return "Invalid check-out time.";
-    }
-
-    // Check if check-out time is after check-in time
-    if (!empty($check_out) && strtotime($check_out) <= strtotime($check_in)) {
-        return "Check-out time must be after check-in time.";
-    }
-
-    // Check if status is valid
-    $valid_statuses = ["Present", "Absent"];
-    if (!in_array($status, $valid_statuses)) {
-        return "Invalid status. Allowed values are 'Present' or 'Absent'.";
-    }
-
-    // If all validations pass
-    return true;
-}
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $employee_id = $_POST['employee_id'];
-    $attendance_date = $_POST['attendance_date'];
-    $check_in = $_POST['check_in'];
-    $check_out = $_POST['check_out'];
-    $status = $_POST['status'];
-    $remarks = $_POST['remarks'];
-
-    // Validate the input
-    $validation_result = validateAttendance($conn, $employee_id, $attendance_date, $check_in, $check_out, $status);
-    if ($validation_result !== true) {
-        echo "<script>
-            Swal.fire({
-                title: 'Error!',
-                text: '$validation_result',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        </script>";
-        exit;
-    }
-
-    // Use the Procedures class to insert attendance
-    $procedures = new Procedures($conn);
-    try {
-        $procedures->insertAttendanceLog($employee_id, $attendance_date, $check_in, $check_out, $status, $remarks);
-        echo "<script>
-            Swal.fire({
-                title: 'Success!',
-                text: 'Attendance recorded successfully!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                location.reload(); // Reload the page to display updated records
-            });
-        </script>";
-    } catch (Exception $e) {
-        echo "<script>
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to record attendance: " . $e->getMessage() . "',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-        </script>";
-    }
-}
-
-// Retrieve attendance records
-$attendanceRecords = [];
-$stmt = $conn->prepare("CALL GetAllAttendanceLogs(?)");
-$employee_id = 1; // Replace with the desired EmployeeID or session-based EmployeeID
-$stmt->bind_param("i", $employee_id);
-
-$result = $stmt->get_result();
-$stmt->execute();
-if ($result) {
-    $attendanceRecords = $result->fetch_all(MYSQLI_ASSOC);
-}
-$stmt->close();
-?>
-
-
-
-<div class="container mt-5 text-center">
-    <h2 class="text-center">Attendance Dashboard</h2>
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <h4>Mark Attendance</h4>
-            <form id="attendanceForm" method="POST">
-                <div class="form-group">
-                    <label for="employeeId">Employee ID</label>
-                    <input type="text" class="form-control" id="employeeId" name="employee_id" required>
-                </div>
-                <div class="form-group">
-                    <label for="attendanceDate">Attendance Date</label>
-                    <input type="date" class="form-control" id="attendanceDate" name="attendance_date" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkIn">Check-In Time</label>
-                    <input type="time" class="form-control" id="checkIn" name="check_in" required>
-                </div>
-                <div class="form-group">
-                    <label for="checkOut">Check-Out Time</label>
-                    <input type="time" class="form-control" id="checkOut" name="check_out">
-                </div>
-                <div class="form-group">
-                    <label for="attendanceStatus">Status</label>
-                    <select class="form-control" id="attendanceStatus" name="status" required>
-                        <option value="">Select Status</option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="remarks">Remarks</label>
-                    <input type="text" class="form-control" id="remarks" name="remarks">
-                </div>
-                
-                <button type="submit" class="btn btn-custom">Submit Attendance</button>
-            </form>
-            <div class="text-center mt-3">
-                <a href="index.php" class="btn btn-warning btn-lg">Back</a>
-            </div>
-        </div>
-        
+<main class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
+        <div id="clock" class="text-center"></div> <!-- Clock Display -->
+        <form method="POST">
+    <div class="form-group">
+        <label for="employee_id">Enter Employee ID</label>
+        <input type="text" class="form-control" maxlength= "5" name="employee_id" required>
     </div>
-</div>
+    <div class="form-group">
+        <label for="password">Enter Password</label>
+        <input type="password" class="form-control" name="password" required>
+    </div>
+    <div class="d-flex justify-content-between">
+        <button type="submit" name="action" value="Time In" class="btn btn-success w-45">TimeIn</button>
+        <button type="submit" name="action" value="Time Out" class="btn btn-danger w-45">TimeOut</button>
+    </div>
+</form>
+        <!-- Button to navigate to index.php -->
+        <button onclick="window.location.href='/Employee-Attendance-and-Status-Management-System/php/index.php'" class="btn btn-primary w-100 mt-3"> return </button>
+    </div>
+</main>
 
-<?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($attendanceRecords) && !empty($attendanceRecords)): ?>
-<div class="container mt-5">
-    <h3 class="text-center">Attendance Records</h3>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Employee ID</th>
-                <th>Date</th>
-                <th>Check-In</th>
-                <th>Check-Out</th>
-                <th>Status</th>
-                <th>Remarks</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($attendanceRecords as $record): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($record['EmployeeID']); ?></td>
-                    <td><?php echo htmlspecialchars($record['Date']); ?></td>
-                    <td><?php echo htmlspecialchars($record['CheckIn']); ?></td>
-                    <td><?php echo htmlspecialchars($record['CheckOut']); ?></td>
-                    <td><?php echo htmlspecialchars($record['Status']); ?></td>
-                    <td><?php echo htmlspecialchars($record['Remarks']); ?></td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
-<?php endif; ?>
-
-<footer class="footer">
+<footer class="footer text-center py-3 bg-dark text-white">
     <p>&copy; 2025 ChooksToJarell. All Rights Reserved.</p>
 </footer>
 
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@sweetalert2/11"></script>
+<?php if (!empty($swalScript)): ?>
 <script>
-    $(document).ready(function() {
-        $('#attendanceForm').on('submit', function(e) {
-            e.preventDefault();
-            const employeeId = $('#employeeId').val();
-            const status = $('#attendanceStatus').val();
-            const date = new Date().toLocaleDateString();
-
-            // Add record to the table
-            $('#attendanceRecords').append(`
-                <tr>
-                    <td>${employeeId}</td>
-                    <td>${date}</td>
-                    <td>${status}</td>
-                </tr>
-            `);
-
-            // Show success alert
-            Swal.fire({
-                title: 'Success!',
-                text: 'Attendance recorded successfully!',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
-
-            // Reset form
-            $('#attendanceForm')[0].reset();
-        });
-
-        // Handle delete button click
-        $(document).on('click', '.delete-btn', function() {
-            const id = $(this).data('id');
-            if (confirm('Are you sure you want to delete this record?')) {
-                $.ajax({
-                    url: 'delete_attendance.php',
-                    type: 'POST',
-                    data: { id: id },
-                    success: function(response) {
-                        if (response === 'success') {
-                            alert('Record deleted successfully!');
-                            location.reload();
-                        } else {
-                            alert('Failed to delete record.');
-                        }
-                    }
-                });
-            }
-        });
-
-        // Handle edit button click
-        $(document).on('click', '.edit-btn', function() {
-            const id = $(this).data('id');
-            // Redirect to edit page with the record ID
-            window.location.href = `edit_attendance.php?id=${id}`;
-        });
-    });
+    <?php echo $swalScript; ?>
 </script>
+<?php endif; ?>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+        document.getElementById('clock').textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+</script>
+
 </body>
 </html>
