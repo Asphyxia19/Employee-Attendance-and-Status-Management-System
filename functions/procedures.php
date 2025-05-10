@@ -58,7 +58,10 @@ class Procedures {
     }
 
     public function createEmployee($firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password) {
-        $this->callProcedure('CreateEmployee', [$firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $password]);
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        $this->callProcedure('CreateEmployee', [
+            $firstName, $lastName, $contactNumber, $email, $address, $position, $hireDate, $hashedPassword
+        ]);
     }
 
     public function insertAttendanceLog($employeeID, $date, $checkIn, $checkOut, $status, $remarks) {
