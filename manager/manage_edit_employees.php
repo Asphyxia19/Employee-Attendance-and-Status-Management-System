@@ -228,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['employee_id'])) {
         </div>
         <div class="form-group">
             <label for="contact_number">Contact Number</label>
-            <input type="text" class="form-control" id="contact_number" name="contact_number" value="<?php echo htmlspecialchars($employee['ContactNumber']); ?>" required>
+            <input type="text" class="form-control" id="contact_number" maxlength="11" name="contact_number" value="<?php echo htmlspecialchars($employee['ContactNumber']); ?>" required>
         </div>
         <div class="form-group">
             <label for="email">Email</label>
